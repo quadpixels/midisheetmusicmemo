@@ -57,6 +57,21 @@ public class Staff {
     public int getNumMeasures() {
     	return barSymbolIdxes.size();
     }
+    public int getMeasureIdxFromPulse(int pulse) {
+    	if(pulse < symbols.get(0).getStartTime()) return -1;
+    	for(int i=0; i<barSymbolIdxes.size(); i++) {
+    		int lower_bound = symbols.get(barSymbolIdxes.get(i)).getStartTime();
+    		int upper_bound = lower_bound;
+    		if(i < barSymbolIdxes.size()-1) {
+    			upper_bound = symbols.get(barSymbolIdxes.get(i+1)).getStartTime();
+    		} else upper_bound = symbols.get(symbols.size()-1).getStartTime();
+    		if(lower_bound <= pulse && upper_bound > pulse) return i;
+    	}
+    	return barSymbolIdxes.size() - 1;
+    }
+    public int getMeasureBeginPulse(int midx) {
+    	return symbols.get(barSymbolIdxes.get(midx)).getStartTime();
+    }
     
     /** Create a new staff with the given list of music symbols,
      * and the given key signature.  The clef is determined by
@@ -511,9 +526,6 @@ public class Staff {
     	{
     		float xpos = 0;
     		xmin = xpos;
-
-    		if(canvas!=null) 
-    			DrawHorizontalLinesNoLeftMargin(canvas, paint);
     		
     		if(is_clef) {
     			xpos = xpos + pad_clef;
@@ -552,6 +564,10 @@ public class Staff {
 			}
     		
     		xmax = xpos;
+    		
+
+    		if(canvas!=null) 
+    			DrawHorizontalLinesNoLeftMargin(canvas, paint);
     	}
     	
     	ret.x = (int)xmin; ret.y = (int)xmax;

@@ -1,22 +1,15 @@
 package com.midisheetmusicmemo;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.zip.CRC32;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-
-import com.midisheetmusicmemo.SheetMusic.Vec2;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -24,16 +17,15 @@ import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
 import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Bundle;
-import android.os.Debug;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.MeasureSpec;
+
+import com.midisheetmusicmemo.SheetMusic.Vec2;
 
 public class TommyIntroView extends View implements Runnable {
 	// boilerplate stuff
@@ -51,7 +43,8 @@ public class TommyIntroView extends View implements Runnable {
 	private static final int LINE_HEIGHT = 13;
 	private static boolean DEBUG = false;
 	boolean need_redraw, is_running, is_inited;
-	SheetMusic sheet;
+	public SheetMusic sheet;
+	private int last_sheet_playing_measure_idx = -1, curr_sheet_playing_measure_idx = -1;
 	BitmapHelper bitmap_helper;
 	byte[] midi_data; String midi_title;
 	long checksum;
@@ -59,19 +52,14 @@ public class TommyIntroView extends View implements Runnable {
 	ArrayList<ArrayList<Integer>> measureHashes;
 	ArrayList<Integer> measureWidths;
 	ArrayList<Integer> measureHeights;
-	ArrayList<Long> highscores = new ArrayList<Long>();
 	int num_notes;
 	int num_measures, num_staffs, num_tiles_total;
 	SharedPreferences prefs_highscores, prefs_lastplayed, prefs_playcount;
-	ArrayList<Long> highscores_25 = new ArrayList<Long>(), 
-			highscores_50 = new ArrayList<Long>(), 
-			highscores_75 = new ArrayList<Long>(), 
-			highscores_100 =new ArrayList<Long>();
-
-	ArrayList<Long> timestamps_25 = new ArrayList<Long>(),
-			timestamps_50 = new ArrayList<Long>(),
-			timestamps_75 = new ArrayList<Long>(),
-			timestamps_100= new ArrayList<Long>();
+	ArrayList<ArrayList<Long>> highscores = new ArrayList<ArrayList<Long>>();
+	ArrayList<ArrayList<Long>> timestamps = new ArrayList<ArrayList<Long>>();
+	ArrayList<ArrayList<Integer>> right_clicks = new ArrayList<ArrayList<Integer>>();
+	ArrayList<ArrayList<Integer>> wrong_clicks = new ArrayList<ArrayList<Integer>>();
+	
 	int num_played;
 
 	void free() {
@@ -84,9 +72,18 @@ public class TommyIntroView extends View implements Runnable {
 		thread = null;
 		midi_data = null;
 		measure_tiles.clear();
-		highscores.clear();
 		paint = null;
 		parent = null;
+		for(int i=0; i<TommyConfig.BLANK_RATIOS.length; i++) {
+			highscores.get(i).clear();
+			timestamps.get(i).clear();
+			right_clicks.get(i).clear();
+			wrong_clicks.get(i).clear();
+		}
+		highscores.clear();
+		timestamps.clear();
+		right_clicks.clear();
+		wrong_clicks.clear();
 		System.gc();
 	}
 	
@@ -140,6 +137,8 @@ public class TommyIntroView extends View implements Runnable {
 		}
 		@SuppressLint("UseSparseArrays")
 		HashMap<Integer, Bitmap> cached_bmps = new HashMap<Integer, Bitmap>();
+		LinkedHashMap<Integer, Long>   last_access = new LinkedHashMap<Integer, Long>();
+		
 		Bitmap getTileBitmap(int staff_idx, int measure_idx) {
 			int uid = view.getTileUIDFromMidSid(measure_idx, staff_idx);
 			if(cached_bmps.containsKey(uid) == false) {
@@ -149,6 +148,7 @@ public class TommyIntroView extends View implements Runnable {
 					cached_bmps.put(uid, bmp);
 				}
 			}
+			last_access.put(uid, System.currentTimeMillis());
 			return cached_bmps.get(uid);
 		}
 		int getTileBitmapWidth(int staff_idx, int measure_idx) {
@@ -161,6 +161,7 @@ public class TommyIntroView extends View implements Runnable {
 		private void do_clearBmp(int key) {
 			Bitmap bmp = cached_bmps.get(key);
 			cached_bmps.remove(key);
+			last_access.remove(key);
 			bytes_consumed -= bmp.getHeight() * bmp.getWidth() * 2;
 			bmp.recycle();
 			bmp = null;
@@ -180,6 +181,25 @@ public class TommyIntroView extends View implements Runnable {
 				}
 				for(Integer y : to_delete) {
 					do_clearBmp(y);
+				}
+			}
+		}
+		public void clearOutOfSightBitmapsLRU(int size_cap) {
+			// Sort by usage time
+			synchronized(cached_bmps) {
+				while(bytes_consumed > size_cap) {
+					Integer key_min = -999;
+					long min_millis = Long.MAX_VALUE;
+					for(java.util.Map.Entry<Integer, Long> ety : last_access.entrySet()) {
+						if(min_millis > ety.getValue()) {
+							key_min = ety.getKey();
+							min_millis = ety.getValue();
+						}
+					}
+					if(key_min == -999) break;
+					else {
+						do_clearBmp(key_min);
+					}
 				}
 			}
 		}
@@ -250,10 +270,105 @@ public class TommyIntroView extends View implements Runnable {
 	
 	// Sub-view components
 	class ScoreHistoryPanel {
-		int W, H, x, y, touchid = -1, touchx, touchy;
+		int W, H, x, y, touchid = -1, touchx, touchy, pad_top, pad_bottom, pad_left;
 		long last_click_millis;
+		int pad_button, H_button, H_button_indicator;
+		int dy_btnrow1, dy_btnrow2, dy_curves;
+		final String[] btnrow1_labels = {"25%", "50%", "75%", "100%"};
+		final String[] btnrow2_labels = {"Time", "Accuracy"}; // Radio button
+		boolean[] btnrow1_flags = {true, true, true, true, true};
+		
+		int btnrow1_hl_idx = -1, btnrow2_hl_idx = -1;
+		
+		int btnrow2_choice_idx = 0;
+		int[] btnrow1_x, btnrow1_w, btnrow2_x, btnrow2_w;
+		float btn_text_size;
+		
+		// Computed layout information
+		long min_timestamp, max_timestamp, min_elapsed, max_elapsed;
+		int W_curves;
+		float curve_graph_text_size;
+		
+		private void layoutCurveGraph() {
+			// Layout the timestamps to be shown
+			int idx = 0;
+			min_elapsed = 0;
+			max_elapsed = 0; 
+			min_timestamp = Long.MAX_VALUE;
+			max_timestamp = Long.MIN_VALUE;
+			for(ArrayList<Long> tses : timestamps) {
+				if(btnrow1_flags[idx] == false) continue;
+				for(Long x : tses) {
+					if(x < min_timestamp) min_timestamp = x;
+					if(x > max_timestamp) max_timestamp = x;
+				}
+				idx++;
+			}
+			idx = 0;
+			for(ArrayList<Long> elapses : highscores) {
+				if(btnrow1_flags[idx] == false) continue;
+				for(Long x : elapses) {
+					if(x < min_elapsed) min_elapsed = x;
+					if(x > max_elapsed) max_elapsed = x;
+				}
+				idx++;
+			}
+			
+			paint.setTextSize(curve_graph_text_size);
+			if(btnrow2_choice_idx == 0) // time
+				W_curves = (int) (W - 3*density - 2*pad_left - paint.measureText(String.format("%.1fs", max_elapsed/10000.0f)));
+			else {
+				W_curves = (int) (W - 3 * density - 2*pad_left - paint.measureText("100%"));
+			}
+		}
+		
 		ScoreHistoryPanel(int _w, int _h, int _x, int _y) {
 			W = _w; H = _h; x = _x; y = _y;
+			pad_left = pad_top = (int)(5*density); pad_bottom = (int)(10 * density);
+			pad_button = (int)(3.0f * density);
+			min_timestamp = min_elapsed = Long.MAX_VALUE; max_elapsed = max_timestamp = Long.MIN_VALUE;
+			H_button = (int)(35*density);
+			H_button_indicator = (int)(5*density);
+			btn_text_size = 13.0f * density;
+			curve_graph_text_size = 10.0f * density;
+			
+			dy_btnrow1 = (int)(16*density*3);
+			dy_btnrow2 = dy_btnrow1;// + H_button;
+			dy_curves = dy_btnrow2 + H_button + (int)(5*density);
+			
+			
+			int lblcnt1 = btnrow1_labels.length;
+			btnrow1_w = new int[lblcnt1]; btnrow1_x = new int[lblcnt1];
+			int lblcnt2 = btnrow2_labels.length;
+			btnrow2_w = new int[lblcnt2]; btnrow2_x = new int[lblcnt2];
+			
+			paint.setTextSize(btn_text_size);
+			
+			// Layout row 1 buttons 
+			int x = pad_left;
+			for(int i=0; i<btnrow1_labels.length; i++) {
+				btnrow1_x[i] = x;
+				int w = (int)(2*pad_button + paint.measureText(btnrow1_labels[i]));
+				btnrow1_w[i] = w;
+				x = x + w + 1;
+			}
+			
+			// Layout row 2 buttons
+			x = pad_left;
+			int w2 = 0;
+			for(int i=0; i<btnrow2_labels.length; i++) {
+				btnrow2_x[i] = x;
+				int w = (int)(2*pad_button + paint.measureText(btnrow2_labels[i]));
+				w2 += w;
+				btnrow2_w[i] = w;
+				x = x + w + 1;
+			}
+			// Let Btn Row 2 be on the same line as Btn Row 1
+			for(int i=0; i<btnrow2_labels.length; i++) {
+				btnrow2_x[i] += (W-2*pad_left-w2);
+			}
+			
+			layoutCurveGraph();
 		}
 		void draw(Canvas c) {
 			if(!is_visible()) return;
@@ -291,6 +406,153 @@ public class TommyIntroView extends View implements Runnable {
 				paint.setTextSize(txt_hgt0);
 				c.drawText(played, x+W/2, y0, paint);
 				
+				y0 = (int)(y0 + txt_hgt0);
+			}
+			
+			// Some Button here
+			//
+			// ---------------------------
+			// | 25% | 50% | 75% | 100% |
+			// ---------------------------
+			// | Time | Accuracy |
+			// ---------------------------
+			//
+			// First row buttons
+			NinePatchDrawable btn_bk = TommyConfig.getCurrentStyle().background1;
+			{
+				y0 = y-y_offset + dy_btnrow1;
+				for(int i=0; i<btnrow1_labels.length; i++) {
+					int x1 = btnrow1_x[i];
+					int w1 = btnrow1_w[i];
+					paint.setColor(0xFF808080);
+					paint.setStrokeWidth(density);
+					paint.setStyle(Style.STROKE);
+					paint.setTextAlign(Align.LEFT);
+					paint.setTextSize(btn_text_size);
+
+					btn_bk.setBounds(x1, y0, x1+w1, y0+H_button);
+					btn_bk.setTargetDensity(c);
+					btn_bk.draw(c);
+					if(btnrow1_hl_idx == i) {
+						paint.setStyle(Style.FILL);
+						c.drawRect(x1, y0, x1+w1, y0+H_button, paint);
+					}
+					else paint.setStyle(Style.STROKE);
+					paint.setStyle(Style.FILL);
+					paint.setColor(TommyConfig.getCurrentStyle().btn_text_color);
+					c.drawText(btnrow1_labels[i], x1+pad_button, y0+(H_button-H_button_indicator)/2-(paint.ascent()+paint.descent())/2, paint);
+					if(btnrow1_flags[i] == true) {
+						paint.setStyle(Style.FILL);
+					} else paint.setStyle(Style.STROKE);
+					if(i < TommyConfig.BLANK_RATIOS.length) {
+						paint.setColor(TommyConfig.CURVE_COLORS[i]);
+					} else paint.setColor(0xFF808080);
+					c.drawRect(x1+2*density, y0+H_button-2*density-H_button_indicator, x1+w1-2*density, y0+H_button-2*density, paint);
+				}
+			}
+			
+			// Second row buttons
+			{
+				y0 = y-y_offset + dy_btnrow2;
+				for(int i=0; i<btnrow2_labels.length; i++) {
+					int x2 = btnrow2_x[i];
+					int w2 = btnrow2_w[i];
+					
+					// Outline of button
+					paint.setColor(0xFF808080);
+					paint.setStrokeWidth(density);
+					paint.setStyle(Style.STROKE);
+					paint.setTextAlign(Align.LEFT);
+					paint.setTextSize(btn_text_size);
+					
+					btn_bk.setBounds(x2, y0, x2+w2, y0+H_button);
+					btn_bk.setTargetDensity(c);
+					btn_bk.draw(c);
+					if(btnrow2_hl_idx == i) {
+						paint.setStyle(Style.FILL);
+						c.drawRect(x2, y0, x2+w2, y0+H_button, paint);
+					}
+					else paint.setStyle(Style.STROKE);
+					
+					paint.setColor(TommyConfig.getCurrentStyle().btn_text_color);
+					paint.setStyle(Style.FILL);
+					c.drawText(btnrow2_labels[i], x2+pad_button, y0+(H_button-H_button_indicator)/2-(paint.ascent()+paint.descent())/2, paint);
+					if(i == btnrow2_choice_idx) {
+						paint.setStyle(Style.FILL);
+					} else paint.setStyle(Style.STROKE);
+					c.drawRect(x2+2*density, y0+H_button-2*density-H_button_indicator, x2+w2-2*density, y0+H_button-2*density, paint);
+				}
+			}
+			
+			// High score panel here
+			{
+				y0 = y-y_offset + dy_curves;
+				int h_hs = H - pad_bottom - (y0 - (y-y_offset));
+				paint.setColor(0xFF808080);
+				paint.setStyle(Style.STROKE);
+				c.drawRect(x+pad_left, y0, x+pad_left+W_curves, h_hs + y0, paint);
+				
+				// Ticks
+				{
+					int min_tick_y = (int)(y0 + h_hs - paint.descent());
+					paint.setTextAlign(Align.RIGHT);
+					paint.setStrokeWidth(density);
+					if(btnrow2_choice_idx == 0) {
+						c.drawText("0.0s", x+W-pad_left, min_tick_y, paint);
+					} else {
+						c.drawText("0%", x+W-pad_left, min_tick_y, paint);
+					}
+					
+					int max_tick_y = (int)(y0 - paint.ascent());
+					if(btnrow2_choice_idx == 0) {
+						c.drawText(String.format("%.1fs", max_elapsed/10000.0f), x+W-pad_left, max_tick_y, paint);
+					} else {
+						c.drawText("100%", x+W-pad_left, max_tick_y, paint);
+					}					
+				}
+				
+				paint.setTextAlign(Align.LEFT);
+				paint.setTextSize(curve_graph_text_size);
+				float txt_y = y0 + h_hs - paint.descent();
+				c.drawText("Begin", x+pad_left, txt_y, paint);
+
+				paint.setTextAlign(Align.RIGHT);
+				c.drawText("End", x+pad_left+W_curves, txt_y, paint);
+				
+				paint.setStrokeWidth(density);
+				paint.setStyle(Style.FILL);
+				for(int optidx = 0; optidx < TommyConfig.BLANK_RATIOS.length; optidx++) {
+					if(btnrow1_flags[optidx] == false) continue;
+					ArrayList<Long> elapsed = highscores.get(optidx);
+					ArrayList<Long> tstamp  = timestamps.get(optidx);
+					ArrayList<Integer> right_clks = right_clicks.get(optidx);
+					ArrayList<Integer> wrong_clks = wrong_clicks.get(optidx);
+					float last_dx = -999.0f, last_dy = -999.0f;
+					paint.setColor(TommyConfig.CURVE_COLORS[optidx]);
+					for(int etyidx = 0; etyidx < elapsed.size(); etyidx++) {
+						long t_elapsed = elapsed.get(etyidx), t_tstamp = tstamp.get(etyidx);
+						float dx, dy;
+						if(max_timestamp == min_timestamp) {
+							dx = this.x + this.W/2;
+						} else {
+							dx = this.x+pad_left + (((t_tstamp - min_timestamp) * 1.0f) / (max_timestamp - min_timestamp)) * (W_curves);
+						}
+						if(btnrow2_choice_idx == 0) { // Show time
+							if(max_elapsed == min_elapsed) {
+								dy = y0 + h_hs/2;
+							} else {
+								dy = y0 + h_hs - h_hs * (t_elapsed * 1.0f / max_elapsed);
+							}
+						} else {
+							dy = y0 + h_hs * (1.0f - right_clks.get(etyidx)*1.0f / (wrong_clks.get(etyidx)+right_clks.get(etyidx)));
+						}
+						c.drawCircle(dx, dy, 3.0f*density, paint);
+						if(last_dy != -999.0f) {
+							c.drawLine(dx, dy, last_dx, last_dy, paint);
+						}
+						last_dy = dy; last_dx = dx;
+					}
+				}
 			}
 			
 			paint.setStyle(Style.STROKE);
@@ -307,6 +569,13 @@ public class TommyIntroView extends View implements Runnable {
 				if(y0 > 0 && y0 < H && x > this.x && x < this.x+W) {
 					touchx = x; touchy = y0;
 					touchid = id;
+					
+					// Process button events
+					{
+						btnrow1_hl_idx = getBtnRow1HighlightIdx();
+						btnrow2_hl_idx = getBtnRow2HighlightIdx();
+					}
+					
 					return true;
 				} else {
 					return false;
@@ -318,10 +587,49 @@ public class TommyIntroView extends View implements Runnable {
 			}
 			return true;
 		}
+		
+		private int getBtnRow1HighlightIdx() {
+			if(touchy > dy_btnrow1 && touchy < dy_btnrow1 + H_button) {
+				for(int i=0; i<btnrow1_labels.length; i++) {
+					if(touchx > btnrow1_x[i] && touchx < btnrow1_x[i]+btnrow1_w[i]) {
+						return i;
+					}
+				}
+			}
+			return -1;
+		}
+		private int getBtnRow2HighlightIdx() {
+			if(touchy > dy_btnrow2 && touchy < dy_btnrow2 + H_button) {
+				for(int i=0; i<btnrow2_labels.length; i++) {
+					if(touchx > btnrow2_x[i] && touchx < btnrow2_x[i]+btnrow2_w[i]) {
+						return i;
+					}
+				}
+			}
+			return -1;
+		}
+		
 		boolean touchUp(int id) {
 			if(id == touchid) {
 				touchid = -1;
+				if(!is_panning_y) {
+					if(btnrow1_hl_idx != -1) {
+						if(btnrow1_hl_idx == getBtnRow1HighlightIdx()) {
+							btnrow1_flags[btnrow1_hl_idx] = !btnrow1_flags[btnrow1_hl_idx];
+							layoutCurveGraph();
+						}
+					}
+					if(btnrow2_hl_idx != -1) {
+						if(btnrow2_hl_idx == getBtnRow2HighlightIdx()) {
+							btnrow2_choice_idx = btnrow2_hl_idx;
+							layoutCurveGraph();
+						}
+					}
+				}
 			}
+			btnrow1_hl_idx = -1;
+			btnrow2_hl_idx = -1;
+			need_redraw = true;
 			return true;
 		}
 		boolean isTouched() { return (touchid!=-1); }
@@ -341,13 +649,26 @@ public class TommyIntroView extends View implements Runnable {
 			paint.setStyle(Style.STROKE);
 			paint.setColor(Color.GREEN);
 			paint.setStrokeWidth(density);
+			
+			NinePatchDrawable bk = TommyConfig.getCurrentStyle().background1;
+			bk.setBounds(x, y0, x+W, y0+H);
+			bk.setTargetDensity(c);
+			bk.draw(c);
+			
 			if(isTouched()) {
 				paint.setStyle(Style.FILL);
 			} else paint.setStyle(Style.STROKE);
-			c.drawRect(x, y0, x+W, y0+H, paint); 
-			c.drawLine(x, y0, x+W, y0+H, paint);
-			c.drawLine(x+W, y0, x, y0+H, paint);
+			c.drawRect(x, y0, x+W, y0+H, paint);
 			paint.setStyle(Style.STROKE);
+			
+			{
+				paint.setStyle(Style.FILL);
+				paint.setColor(Color.BLACK);
+				paint.setTextSize(16.0f * density);
+				float txt_y = y0 + H/2 - (paint.ascent() + paint.descent())/2;
+				paint.setTextAlign(Align.CENTER);
+				c.drawText("Play", x+W/2, txt_y, paint);
+			}
 		}
 		boolean is_visible() {
 			if(y_offset < y-height) return false;
@@ -424,6 +745,14 @@ public class TommyIntroView extends View implements Runnable {
 				c.drawLine(x+3, y0+3, x+W-3, y0+H-3, paint);
 				c.drawLine(x+W-3, y0+3, x+3, y0+H-3, paint);
 			}
+			
+			if(measure_idx == curr_sheet_playing_measure_idx) {
+				paint.setStyle(Style.FILL);
+				paint.setColor(Color.YELLOW);
+				paint.setAlpha(64);
+				c.drawRect(x, y0, x+W, y0+H, paint);
+				paint.setAlpha(255);
+			}
 		}
 		boolean is_visible() {
 			if(y_offset < y-height) return false;
@@ -452,6 +781,14 @@ public class TommyIntroView extends View implements Runnable {
 			if(id == touchid) {
 				need_redraw = true;
 				touchid = -1;
+				if(is_panning_y == false) {
+					if(parent.isMidiPlayerPlaying()) {
+						parent.stopMidiPlayer();
+					} else {
+						parent.player.MoveToMeasureBegin(measure_idx);
+						parent.startMidiPlayer();
+					}
+				}
 			}
 			return true;
 		}
@@ -486,29 +823,18 @@ public class TommyIntroView extends View implements Runnable {
 			num_staffs   = sheet.getNumStaffs();
 			num_tiles_total = 0;
 			for(int i=0; i<num_staffs; i++) {
-//				ArrayList<MeasureStatus> blah = new ArrayList<MeasureStatus>();
 				for(int j=0; j<num_measures; j++) {
 					num_tiles_total ++;
 				}
 			}
 		}
-		highscores = new ArrayList<Long>();
 		String hs_sz = prefs_highscores.getString(String.format("%x_HS", checksum), "");
-		String[] sep = hs_sz.split(":");
-		if(sep.length == 4) {
-			TommyConfig.populateHSTSArraysFromJSONString(highscores_25, timestamps_25, sep[0]);
-			TommyConfig.populateHSTSArraysFromJSONString(highscores_50, timestamps_50, sep[1]);
-			TommyConfig.populateHSTSArraysFromJSONString(highscores_75, timestamps_75, sep[2]);
-			TommyConfig.populateHSTSArraysFromJSONString(highscores_100, timestamps_100, sep[3]);
-		} else {
-			
-		}
-
+		TommyConfig.populateHSTSArraysFromJSONString(highscores, timestamps, right_clicks, wrong_clicks, hs_sz);
+		
 		Log.v("TommyIntroView", "Highscore string = " + hs_sz);
-		Log.v("TommyIntroView", "Highscore 25 = " + highscores_25.toString());
-		Log.v("TommyIntroView", "Highscore 50 = " + highscores_50.toString());
-		Log.v("TommyIntroView", "Highscore 75 = " + highscores_75.toString());
-		Log.v("TommyIntroView", "Highscore 100= " + highscores_100.toString());
+		for(int i=0; i<TommyConfig.BLANK_RATIOS.length; i++) {
+			Log.v("TommyIntroView", String.format("HighScore %f = ", TommyConfig.BLANK_RATIOS[i]) + highscores.get(i));
+		}
 		
 		bitmap_helper = new BitmapHelper(this, sheet, 1.0f);
 		
@@ -543,7 +869,14 @@ public class TommyIntroView extends View implements Runnable {
 			touches[i] = new Vec2();
 		}
 		measure_tiles = new ArrayList<MeasureTile>();
-
+		
+		for(int i=0; i<TommyConfig.BLANK_RATIOS.length; i++) {
+			highscores.add(new ArrayList<Long>());
+			timestamps.add(new ArrayList<Long>());
+			right_clicks.add(new ArrayList<Integer>());
+			wrong_clicks.add(new ArrayList<Integer>());
+		}
+		
 		prefs_highscores = ctx.getSharedPreferences("highscores", Context.MODE_PRIVATE);
 		prefs_lastplayed = ctx.getSharedPreferences("lastplayed", Context.MODE_PRIVATE);
 		prefs_playcount  = ctx.getSharedPreferences("playcounts", Context.MODE_PRIVATE);
@@ -554,40 +887,51 @@ public class TommyIntroView extends View implements Runnable {
 	
 	private void update() {
 		synchronized(this) {
-		//		need_redraw = false;
-			//	long millis = System.currentTimeMillis();
-				if(touches_on_bk == 1) {
-					for(int i=0; i<invdpads.length; i++) {
-						if(invdpads[i].isTouched()) {
-							InvisibleDPad dpad = invdpads[i];
-							pan_accumulated += Math.abs(dpad.deltay);
-							if(pan_accumulated > PANNING_THRESHOLD) {
-								is_panning_y = true;
-								
-								{
-									score_history.touchUp(score_history.touchid);
-									button_panel.touchUp(button_panel.touchid);
-									for(MeasureTile mt : measure_tiles) {
-										mt.touchUp(mt.touchid);
-									}
+	//		need_redraw = false;
+		//	long millis = System.currentTimeMillis();
+			if(touches_on_bk == 1) {
+				for(int i=0; i<invdpads.length; i++) {
+					if(invdpads[i].isTouched()) {
+						InvisibleDPad dpad = invdpads[i];
+						pan_accumulated += Math.abs(dpad.deltay);
+						if(pan_accumulated > PANNING_THRESHOLD) {
+							is_panning_y = true;
+							
+							{
+								score_history.touchUp(score_history.touchid);
+								button_panel.touchUp(button_panel.touchid);
+								for(MeasureTile mt : measure_tiles) {
+									mt.touchUp(mt.touchid);
 								}
-								
 							}
-							setYOffset(y_offset - dpad.deltay);
-							need_redraw = true;
-							dpad.clearDeltaXY();
+							
 						}
+						setYOffset(y_offset - dpad.deltay);
+						need_redraw = true;
+						dpad.clearDeltaXY();
 					}
 				}
-				
-				int bytes_consumed = bitmap_helper.getBytesConsumed();
-				if(bytes_consumed > BITMAP_MEMORY_BUDGET) {
-					bitmap_helper.clearOutOfSightBitmaps();
+			}
+			
+			int bytes_consumed = bitmap_helper.getBytesConsumed();
+			if(bytes_consumed > BITMAP_MEMORY_BUDGET) {
+//				bitmap_helper.clearOutOfSightBitmaps();
+				bitmap_helper.clearOutOfSightBitmapsLRU(BITMAP_MEMORY_BUDGET*3/4);
+			}
+			
+			yOffsetInertia();
+			
+			if(sheet != null) {
+				last_sheet_playing_measure_idx = curr_sheet_playing_measure_idx;
+				curr_sheet_playing_measure_idx = sheet.getCurrentPlayingMeasure();
+				if(curr_sheet_playing_measure_idx != last_sheet_playing_measure_idx) {
+					need_redraw = true;
 				}
-				
-				yOffsetInertia();
+			} else {
+				last_sheet_playing_measure_idx = curr_sheet_playing_measure_idx = -1;
 			}
 		}
+	}
 		
 		@Override
 		protected void onDraw(Canvas c) {
@@ -606,11 +950,13 @@ public class TommyIntroView extends View implements Runnable {
 				paint.setTextAlign(Align.CENTER);
 				paint.setColor(Color.BLUE);
 				paint.setTextSize(12 * density);
+				paint.setStrokeWidth(density);
+				paint.setStyle(Style.FILL);
 				String sz = String.format("Frame %d, BMP=%.2fM/%.2fM",
 						frame_count,
 						bitmap_helper.getBytesConsumed()/1048576.0f,
 						BITMAP_MEMORY_BUDGET/1048576.0f);
-				c.drawText(sz, width/2, 14*density, paint);
+				c.drawText(sz, width/2, height-14*density, paint);
 				
 				need_redraw = false;
 			}
@@ -647,18 +993,25 @@ public class TommyIntroView extends View implements Runnable {
 		}
 	}
 	
+	private void updateBitmapMemoryBudget() {
+		BITMAP_MEMORY_BUDGET = (int)(2 * width * height * 4.0f);
+	}
+	
 	private void layout() {
 		// Prepare a 2-screenful-sized buffer
-		BITMAP_MEMORY_BUDGET = (int)(2 * width * height * 2.0f);
+		// Measurement of height here may not be accurate b/c the IME panel takes up half of the screen!!!
+		updateBitmapMemoryBudget();
 		
 		bitmap_helper.bitmap_zoom = 1.0f * width / LINE_WIDTH;
 		PANNING_THRESHOLD = (int)(12 * density);
 		int y = 0;
-		int h_sh = (int)(LINE_HEIGHT*6*density-2);
+		int h_sh = (int)(LINE_HEIGHT*24*density-2);
+		int h_btn = (int)(LINE_HEIGHT*6*density-2);
 		score_history = new ScoreHistoryPanel(width, h_sh, 0, y);
 		y += h_sh;
-		button_panel  = new ButtonPanel(width, h_sh, 0, y);
-		y += h_sh;
+		
+		button_panel  = new ButtonPanel(width, h_btn, 0, y);
+		y += h_btn;
 		
 		for(int i=0; i<invdpads.length; i++) {
 			invdpads[i] = new InvisibleDPad();
@@ -807,6 +1160,7 @@ public class TommyIntroView extends View implements Runnable {
 	   Log.v("TommyIntroView.onMeasure", String.format("W=%d, H=%d", width, height));
 	   super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 	   setMeasuredDimension(width, height);
+	   updateBitmapMemoryBudget();
 	   afterMeasure();
 	}
 

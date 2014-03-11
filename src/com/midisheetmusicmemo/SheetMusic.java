@@ -141,6 +141,16 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
         }
         bufferX = bufferY = scrollX = scrollY = 0;
     }
+    
+    // Added 20140311
+    private int curr_playing_measure_idx = -1;
+    public int getCurrentPlayingMeasure() {
+    	return curr_playing_measure_idx;
+    }
+    public int getMeasureBeginPulse(int midx) {
+    	return staffs.get(0).getMeasureBeginPulse(midx);
+    	
+    }
 
     /** Create a new SheetMusic View.
      * MidiFile is the parsed midi file to display.
@@ -1363,7 +1373,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     	}
     	CreateAllBeamedChords(this.allsymbols, this.time_signature);
     	if(scratch == null) 
-    		scratch = Bitmap.createBitmap(scratch_width, scratch_height, Config.ARGB_8888);
+    		scratch = Bitmap.createBitmap(scratch_width, scratch_height, Config.RGB_565);
     }
     
     public void ComputeMeasureHashesNoRender(int line_width) {
@@ -1713,6 +1723,13 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
      *  to the shaded notes.
      */
     public void ShadeNotes(int currentPulseTime, int prevPulseTime, int scrollType) {
+    	if(staffs!=null) {
+    		Staff f = staffs.get(0);
+	        { 
+	        	curr_playing_measure_idx = f.getMeasureIdxFromPulse(currentPulseTime); 
+	        }
+    	}
+        
         if (!surfaceReady || staffs == null) {
             return;
         }

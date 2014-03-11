@@ -66,6 +66,7 @@ public class TommyView2 extends View implements Runnable {
 	ArrayList<ArrayList<Integer>> deck_uids = new ArrayList<ArrayList<Integer>>();
 	int curr_hl_staff = -1, curr_hl_measure = -1;
 	int num_measures, num_staffs, num_tiles_total, num_tiles_hidden, num_notes;
+	int num_right_clicks, num_wrong_clicks;
 	String midi_title = "No title";
 	byte[] midi_data;
 	int recycle_area_score_x_offset = 0; // for state change only
@@ -74,14 +75,11 @@ public class TommyView2 extends View implements Runnable {
 	boolean need_redraw = false;
 	SharedPreferences prefs_highscores, prefs_lastplayed, prefs_playcount;
 	int num_times_played = 0; long checksum;
-	ArrayList<Long> highscores_25 = new ArrayList<Long>(), 
-			highscores_50 = new ArrayList<Long>(), 
-			highscores_75 = new ArrayList<Long>(), 
-			highscores_100 =new ArrayList<Long>();
-	ArrayList<Long> timestamps_25 = new ArrayList<Long>(),
-			timestamps_50 = new ArrayList<Long>(),
-			timestamps_75 = new ArrayList<Long>(),
-			timestamps_100= new ArrayList<Long>();
+	
+	ArrayList<ArrayList<Long>> highscores = new ArrayList<ArrayList<Long>>();
+	ArrayList<ArrayList<Long>> timestamps = new ArrayList<ArrayList<Long>>();
+	ArrayList<ArrayList<Integer>> right_clicks = new ArrayList<ArrayList<Integer>>();
+	ArrayList<ArrayList<Integer>> wrong_clicks = new ArrayList<ArrayList<Integer>>();
 	
 	public void pause() {
 		is_running = false;
@@ -155,13 +153,15 @@ public class TommyView2 extends View implements Runnable {
 		bundle.putSerializable("game_state", game_state);
 		bundle.putLong("checksum", checksum);
 		bundle.putInt("num_times_played", num_times_played);
-		bundle.putSerializable("highscores_25", highscores_25);
-		bundle.putSerializable("highscores_50", highscores_50);
-		bundle.putSerializable("highscores_75", highscores_75);
-		bundle.putSerializable("highscores_100", highscores_100);
+		bundle.putSerializable("highscores", highscores);
+		bundle.putSerializable("timestamps", timestamps);
+		bundle.putSerializable("right_clicks", right_clicks);
+		bundle.putSerializable("wrong_clicks", wrong_clicks);
 		bundle.putSerializable("measure_heights", measureHeights);
 		bundle.putSerializable("measure_widths", measureWidths);
 		bundle.putFloat("blanks_ratio", blanks_ratio);
+		bundle.putInt("num_right_clicks", num_right_clicks);
+		bundle.putInt("numwrong_clicks", num_wrong_clicks);
 		is_running = false;
 	}
 	
@@ -185,15 +185,17 @@ public class TommyView2 extends View implements Runnable {
 		elapsed_millis = bundle.getLong("elapsed_millis");
 		checksum = bundle.getLong("checksum");
 		num_times_played = bundle.getInt("num_times_played");
-		highscores_25 = (ArrayList<Long>)bundle.getSerializable("highscores_25");
-		highscores_50 = (ArrayList<Long>)bundle.getSerializable("highscores_50");
-		highscores_75 = (ArrayList<Long>)bundle.getSerializable("highscores_75");
-		highscores_100= (ArrayList<Long>)bundle.getSerializable("highscores_100");
+		highscores = (ArrayList<ArrayList<Long>>)bundle.getSerializable("highscores");
+		timestamps = (ArrayList<ArrayList<Long>>)bundle.getSerializable("timestamps");
+		right_clicks = (ArrayList<ArrayList<Integer>>)bundle.getSerializable("right_clicks");
+		wrong_clicks = (ArrayList<ArrayList<Integer>>)bundle.getSerializable("wrong_clicks");
 		measureHeights = (ArrayList<Integer>)bundle.getSerializable("measure_heights");
 		measureWidths  = (ArrayList<Integer>)bundle.getSerializable("measure_widths");
 		sheet = MidiSheetMusicActivity.sheet0;
 		bitmap_helper = new BitmapHelper(this, sheet, AREA1_zoom_x, AREA1_zoom_y);
 		blanks_ratio = bundle.getFloat("blanks_ratio");
+		num_right_clicks = bundle.getInt("num_right_clicks");
+		num_wrong_clicks = bundle.getInt("num_wrong_clicks");
 		Toast.makeText(ctx, "Loaded state", Toast.LENGTH_SHORT).show();
 	}
 	
@@ -388,28 +390,20 @@ public class TommyView2 extends View implements Runnable {
 			long curr_millis = System.currentTimeMillis(); 
 			
 			// Update histories of the current file.
-			if(blanks_ratio == 0.25f) { 
-				highscores_25.add(elapsed_millis);
-				timestamps_25.add(curr_millis);
-			} else if(blanks_ratio == 0.50f) { 
-				highscores_50.add(elapsed_millis);
-				timestamps_50.add(curr_millis);
-			} else if(blanks_ratio == 0.75f) { 
-				highscores_75.add(elapsed_millis);
-				timestamps_75.add(curr_millis);
-			} else if(blanks_ratio == 1.00f) { 
-				highscores_100.add(elapsed_millis);
-				timestamps_100.add(curr_millis);
+			int hs_array_idx = -999;
+			for(int i=0; i<TommyConfig.BLANK_RATIOS.length; i++) {
+				if(TommyConfig.BLANK_RATIOS[i] == blanks_ratio) {
+					hs_array_idx = i; break;
+				}
 			}
+
+			highscores.get(hs_array_idx).add(elapsed_millis);
+			timestamps.get(hs_array_idx).add(curr_millis);
+			right_clicks.get(hs_array_idx).add(num_right_clicks);
+			wrong_clicks.get(hs_array_idx).add(num_wrong_clicks);
 			
 			StringBuilder hssb = new StringBuilder();
-			hssb.append(TommyConfig.HSTSArraysToJSONString(highscores_25, timestamps_25));
-			hssb.append(":");
-			hssb.append(TommyConfig.HSTSArraysToJSONString(highscores_50, timestamps_25));
-			hssb.append(":");
-			hssb.append(TommyConfig.HSTSArraysToJSONString(highscores_75, timestamps_75));
-			hssb.append(":");
-			hssb.append(TommyConfig.HSTSArraysToJSONString(highscores_100, timestamps_100));
+			hssb.append(TommyConfig.HSTSArraysToJSONString(highscores, timestamps, right_clicks, wrong_clicks));
 			Log.v("TommyView2", "New HS String="+hssb.toString());
 			
 			editor.putString(String.format("%x_HS", checksum), hssb.toString());
@@ -617,6 +611,7 @@ public class TommyView2 extends View implements Runnable {
 						hash_ans = measureHashes.get(curr_hl_staff).get(curr_hl_measure);
 					Log.v("touchUp", String.format("hash=%x, %x", hash_my, hash_ans));
 					if(hash_ans == hash_my) {
+						num_right_clicks ++;
 						// When hashes collide
 						// Swap the actual underlying tiles
 						if(!(curr_hl_staff == staff_idx && curr_hl_measure == measure_idx)) {
@@ -660,6 +655,7 @@ public class TommyView2 extends View implements Runnable {
 						advanceHighlightedStaffMeasureIdx();
 						need_redraw = true;
 					} else {
+						num_wrong_clicks ++;
 						startShaking();
 					}
 				} else {
@@ -945,7 +941,7 @@ public class TommyView2 extends View implements Runnable {
 						c.drawText(s, intro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
 						y1 = y1 + bb.bottom - bb.top;
 
-						s = String.format("%d plays", num_times_played);
+						s = String.format("%d/%d clicks", num_right_clicks, num_wrong_clicks);
 						paint.getTextBounds(s, 0, s.length(), bb);
 						c.drawText(s, intro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
 					}
@@ -972,6 +968,11 @@ public class TommyView2 extends View implements Runnable {
 					s = String.format("%.1f seconds", seconds_elapsed);
 					paint.getTextBounds(s, 0, s.length(), bb);
 					c.drawText(s, outro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
+					y1 = y1 + bb.bottom - bb.top;
+					
+					s = String.format("%d/%d clicks", num_right_clicks, num_wrong_clicks);
+					c.drawText(s, outro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
+					
 				}
 			}
 			
@@ -1343,9 +1344,21 @@ public class TommyView2 extends View implements Runnable {
 				measures_status.add(blah);
 			}
 		}
+		
+		// Other stuff
+		{
+			num_wrong_clicks = num_right_clicks = 0;
+			for(int i=0; i<TommyConfig.BLANK_RATIOS.length; i++) {
+				highscores.add(new ArrayList<Long>());
+				timestamps.add(new ArrayList<Long>());
+				right_clicks.add(new ArrayList<Integer>());
+				wrong_clicks.add(new ArrayList<Integer>());
+			}
+		}
 
 		String hs_sz = prefs_highscores.getString(String.format("%x_HS", checksum), "");
 		Log.v("initMidiFile", "Historical Scores: " + hs_sz);
+		TommyConfig.populateHSTSArraysFromJSONString(highscores, timestamps, right_clicks, wrong_clicks, hs_sz);
 		num_times_played = prefs_playcount.getInt(String.format("%x", checksum), 0);
 		bitmap_helper = new BitmapHelper(this, sheet, 1.0f, 1.0f);
 		is_inited = true;
