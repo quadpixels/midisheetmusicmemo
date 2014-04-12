@@ -390,6 +390,21 @@ public class MidiPlayer extends LinearLayout {
             toast.show();
         }
     }
+    
+    public void onTempoChanged() {
+    	pulsesPerMsec = midifile.getTime().getQuarter() * (1000.0 / options.tempo);
+
+        try {
+            FileOutputStream dest = activity.openFileOutput(tempSoundFile, Context.MODE_PRIVATE);
+            midifile.ChangeSound(dest, options);
+            dest.close();
+            // checkFile(tempSoundFile);
+        }
+        catch (IOException e) {
+            Toast toast = Toast.makeText(activity, "Error: Unable to create MIDI file for playing.", Toast.LENGTH_LONG);
+            toast.show();
+        }
+    }
 
     private void checkFile(String name) {
         try {
@@ -468,6 +483,7 @@ public class MidiPlayer extends LinearLayout {
         // Hide the midi player, wait a little for the view
         // to refresh, and then start playing
         this.setVisibility(View.GONE);
+        Log.v("MidiPlayer", "Tempo="+options.tempo);
         timer.removeCallbacks(TimerCallback);
         timer.postDelayed(DoPlay, 1000);
     }
@@ -502,7 +518,11 @@ public class MidiPlayer extends LinearLayout {
             prevPulseTime = options.shifttime - midifile.getTime().getQuarter();
         }
 
-        CreateMidiFile();
+        if(activity instanceof TommyIntroActivity) {
+        	onTempoChanged();
+        } else {
+        	CreateMidiFile();
+        }
         playstate = playing;
         PlaySound(tempSoundFile);
         startTime = SystemClock.uptimeMillis();
@@ -675,6 +695,8 @@ public class MidiPlayer extends LinearLayout {
     	}
     	playstate = paused;
         
+    	onTempoChanged();
+    	
         int pulse = sheet.getMeasureBeginPulse(measure_idx);
         currentPulseTime = pulse;
         if(sheet!=null)

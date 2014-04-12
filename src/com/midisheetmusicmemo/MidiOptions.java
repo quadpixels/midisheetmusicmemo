@@ -64,6 +64,7 @@ public class MidiOptions implements Serializable {
 
 
     public MidiOptions() {
+    	
     }
 
     /* Initialize the default settings/options for the given MidiFile */

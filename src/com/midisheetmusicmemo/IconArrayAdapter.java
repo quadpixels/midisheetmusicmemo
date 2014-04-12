@@ -35,8 +35,8 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
     private LayoutInflater inflater;
     private static Bitmap midiIcon;       /* The midi icon */
     private static Bitmap directoryIcon;  /* The directory icon */
-    private SharedPreferences prefs_play_count;
-    private SharedPreferences prefs_last_played;
+    private SharedPreferences prefs_play_count, prefs_quizcount;
+    private SharedPreferences prefs_last_played, prefs_colorscheme;
 
     /** Load the NotePair image into memory. */
     public void LoadImages(Context context) {
@@ -54,6 +54,8 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
         inflater = LayoutInflater.from(context); 
         prefs_play_count = context.getSharedPreferences("playcounts", Context.MODE_PRIVATE);
         prefs_last_played= context.getSharedPreferences("lastplayed", Context.MODE_PRIVATE);
+        prefs_colorscheme = context.getSharedPreferences("colorscheme", Context.MODE_PRIVATE);
+        prefs_quizcount  = context.getSharedPreferences("quizcounts", Context.MODE_PRIVATE);
     }
 
     /** Create a view for displaying a song in the ListView.
@@ -69,6 +71,8 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
          ImageView image = (ImageView)convertView.findViewById(R.id.choose_song_icon);
          text.setHighlightColor(Color.WHITE);
          TextView tommy_text = (TextView)convertView.findViewById(R.id.choose_song_stats);
+         TextView color_indicator = (TextView)convertView.findViewById(R.id.choose_song_color);
+         
          FileUri file = (FileUri) this.getItem(position);
          if (file.isDirectory()) {
              image.setImageBitmap(directoryIcon);
@@ -78,10 +82,10 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
          else {
              image.setImageBitmap(midiIcon);
              text.setText(file.toString());
-             
 
-             int play_count = prefs_play_count.getInt(file.toString(), 0);
-             String sz_played = play_count + " plays";
+             int play_count = prefs_play_count.getInt(file.toStringFull(), 0);
+             int quiz_count = prefs_quizcount.getInt(file.toStringFull(), 0);
+             String sz_played = play_count + " plays, " + quiz_count + " quizzees";
              String sz_lastplay;
              long date_millis = prefs_last_played.getLong(file.toString(), -1);
              if(date_millis == -1) {
@@ -91,6 +95,15 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
             	 sz_lastplay = "\nLast played " + d.toLocaleString();
              }
              tommy_text.setText(sz_played + sz_lastplay);
+             
+             // Color scheme
+             int cidx = prefs_colorscheme.getInt(file.toStringFull(), -1);
+             if(cidx < 0 || cidx >= TommyConfig.styles.length) {
+            	 color_indicator.setBackgroundColor(0xFF000000);
+             } else {
+            	 int bkcolor = TommyConfig.getStyleByIdx(cidx).background_color;
+            	 color_indicator.setBackgroundColor(bkcolor);
+             }
          }
          return convertView;
     }

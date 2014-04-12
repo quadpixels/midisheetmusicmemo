@@ -1010,6 +1010,16 @@ public class ChordSymbol implements MusicSymbol {
 		return h;
 	}
 
+	public void clearBeams() {
+		if(stem1 != null) {
+			stem1.setReceiver(false);
+			stem1.SetPair(null, 0);
+		}
+		if(stem2 != null) {
+			stem2.setReceiver(false);
+			stem2.SetPair(null, 0);
+		}
+	}
 }
 
 

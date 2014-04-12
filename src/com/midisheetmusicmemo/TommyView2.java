@@ -30,28 +30,37 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.midisheetmusicmemo.SheetMusic.Vec2;
+import com.midisheetmusicmemo.TommyIntroView.MeasureTile;
 
 // 2014-03-02: Refactor to prepare for more refactoring --- bitmap cache
 // 2014-03-03: Tested on Android 4.3 and attempting to find the cause of the memory leak
-// 2014-03-06: Cause of memory leak bug = Forgot to finish the updater thread
+// 2014-03-06: Cause of memory leak bug = Forgot to finish the updater updater_thread
+// 2014-03-13: Add separator in U.I.
 
 public class TommyView2 extends View implements Runnable {
+	
+	// Some constants
+	String difficulty_1, difficulty_2, difficulty_3, difficulty_4;
+	String please_make_a_choice, well_done, tiles_to_go;
+	
+	private static SheetMusic sheet1;
+	MidiOptions options;
 	boolean is_freed = false;
-	Debug.MemoryInfo memoryInfo = new Debug.MemoryInfo();
 	private boolean DEBUG = MidiSheetMusicActivity.DEBUG;
 	private boolean is_running;
-	private final int FRAME_DELAY = 25;
 	float density;
 	Random rnd = new Random();
 	boolean is_inited = false,
 			is_ui_created = false;
-	long elapsed_millis, last_update_millis;
+	long elapsed_millis, last_redraw_millis;
 	
 	int AREA1_HGT, AREA1_bitmap_hgt0; // Recycling Area Height
 	int width, height;
 	float AREA1_zoom_x, AREA1_zoom_y; // Preset zoom, can be adjusted by user.
+	int curr_layout_id;
 	float blanks_ratio = 0.5f;
 	int frame_count = 0;
+	final int FRAME_DELAY = 16;
 	
 	int BITMAP_MEM_BUDGET = 0;
 	long last_heap_memory_alloc = 0;
@@ -65,21 +74,43 @@ public class TommyView2 extends View implements Runnable {
 	ArrayList<ArrayList<MeasureStatus>> measures_status = new ArrayList<ArrayList<MeasureStatus>>();
 	ArrayList<ArrayList<Integer>> deck_uids = new ArrayList<ArrayList<Integer>>();
 	int curr_hl_staff = -1, curr_hl_measure = -1;
+	long curr_highlighted_millis; boolean is_curr_measure_ok_first_try = true;
 	int num_measures, num_staffs, num_tiles_total, num_tiles_hidden, num_notes;
 	int num_right_clicks, num_wrong_clicks;
-	String midi_title = "No title";
+	String midi_title = "No title", midi_uri_string=null;
 	byte[] midi_data;
-	int recycle_area_score_x_offset = 0; // for state change only
+	float recycle_area_score_x_offset = 0; // for state change only
 	ArrayList<TileInAnimation> tiles_in_animation = new ArrayList<TileInAnimation>();
 	
 	boolean need_redraw = false;
-	SharedPreferences prefs_highscores, prefs_lastplayed, prefs_playcount;
+	SharedPreferences prefs_highscores, prefs_lastplayed, prefs_quizcount, prefs_quizstats, prefs_finegrained;
 	int num_times_played = 0; long checksum;
 	
 	ArrayList<ArrayList<Long>> highscores = new ArrayList<ArrayList<Long>>();
 	ArrayList<ArrayList<Long>> timestamps = new ArrayList<ArrayList<Long>>();
-	ArrayList<ArrayList<Integer>> right_clicks = new ArrayList<ArrayList<Integer>>();
-	ArrayList<ArrayList<Integer>> wrong_clicks = new ArrayList<ArrayList<Integer>>();
+	ArrayList<ArrayList<Integer>> right_clicks_history = new ArrayList<ArrayList<Integer>>();
+	ArrayList<ArrayList<Integer>> wrong_clicks_history = new ArrayList<ArrayList<Integer>>();
+	ArrayList<ArrayList<Integer>> right_clicks_measures= new ArrayList<ArrayList<Integer>>();
+	ArrayList<ArrayList<Integer>> wrong_clicks_measures= new ArrayList<ArrayList<Integer>>();
+	ArrayList<ArrayList<Long>> delays_measures= new ArrayList<ArrayList<Long>>();
+	ArrayList<Integer> actual_track_idx = new ArrayList<Integer>();
+	ArrayList<ArrayList<ArrayList<Boolean>>> okclicks_history_f = new ArrayList<ArrayList<ArrayList<Boolean>>>();
+	ArrayList<ArrayList<ArrayList<Long>>> millis_history_f = new ArrayList<ArrayList<ArrayList<Long>>>();
+
+	// This array is to be read from conf file
+	ArrayList<ArrayList<Integer>> measure_mastery_states       = new ArrayList<ArrayList<Integer>>();
+	ArrayList<ArrayList<TommyMastery>> masteries = new ArrayList<ArrayList<TommyMastery>>();
+	ArrayList<Integer> actual_staff_idx = new ArrayList<Integer>();
+	
+	Rect src = new Rect(), dst = new Rect();
+	static final int SEPARATOR_HEIGHT = 12; 
+	static final int NAVIGATION_BUTTON_WIDTH = 24;
+	
+	// Resizing Recycle Area
+	int pinch_begin_x_avg = 0, pinch_begin_y_avg = 0;
+	int pinch_touchid0 = -999, pinch_touchid1 = -999;
+	int pinch_begin_AREA1_HGT = -999;
+	boolean is_resizing_recycling_area = false;
 	
 	public void pause() {
 		is_running = false;
@@ -145,18 +176,18 @@ public class TommyView2 extends View implements Runnable {
 		bundle.putInt("num_tiles_hidden", num_tiles_hidden);
 		bundle.putInt("curr_hl_staff", curr_hl_staff);
 		bundle.putInt("curr_hl_measure", curr_hl_measure);
-		bundle.putInt("recycle_area_score_x_offset", recycle_area.score_x_offset);
+		bundle.putFloat("recycle_area_score_x_offset", recycle_area.score_x_offset);
 		bundle.putInt("num_notes", num_notes);
 		bundle.putString("title", midi_title);
-		bundle.putLong("last_update_millis", last_update_millis);
+		bundle.putLong("last_redraw_millis", last_redraw_millis);
 		bundle.putLong("elapsed_millis", elapsed_millis);
 		bundle.putSerializable("game_state", game_state);
 		bundle.putLong("checksum", checksum);
 		bundle.putInt("num_times_played", num_times_played);
 		bundle.putSerializable("highscores", highscores);
 		bundle.putSerializable("timestamps", timestamps);
-		bundle.putSerializable("right_clicks", right_clicks);
-		bundle.putSerializable("wrong_clicks", wrong_clicks);
+		bundle.putSerializable("right_clicks_history", right_clicks_history);
+		bundle.putSerializable("wrong_clicks_history", wrong_clicks_history);
 		bundle.putSerializable("measure_heights", measureHeights);
 		bundle.putSerializable("measure_widths", measureWidths);
 		bundle.putFloat("blanks_ratio", blanks_ratio);
@@ -177,21 +208,21 @@ public class TommyView2 extends View implements Runnable {
 		num_tiles_hidden = bundle.getInt("num_tiles_hidden");
 		curr_hl_staff = bundle.getInt("curr_hl_staff");
 		curr_hl_measure = bundle.getInt("curr_hl_measure");
-		recycle_area_score_x_offset = bundle.getInt("recycle_area_score_x_offset");
+		recycle_area_score_x_offset = bundle.getFloat("recycle_area_score_x_offset");
 		num_notes = bundle.getInt("num_notes");
 		midi_title = bundle.getString("title");
-		last_update_millis = bundle.getLong("last_update_millis");
+		last_redraw_millis = bundle.getLong("last_redraw_millis");
 		game_state = (GameState)(bundle.getSerializable("game_state"));
 		elapsed_millis = bundle.getLong("elapsed_millis");
 		checksum = bundle.getLong("checksum");
 		num_times_played = bundle.getInt("num_times_played");
 		highscores = (ArrayList<ArrayList<Long>>)bundle.getSerializable("highscores");
 		timestamps = (ArrayList<ArrayList<Long>>)bundle.getSerializable("timestamps");
-		right_clicks = (ArrayList<ArrayList<Integer>>)bundle.getSerializable("right_clicks");
-		wrong_clicks = (ArrayList<ArrayList<Integer>>)bundle.getSerializable("wrong_clicks");
+		right_clicks_history = (ArrayList<ArrayList<Integer>>)bundle.getSerializable("right_clicks_history");
+		wrong_clicks_history = (ArrayList<ArrayList<Integer>>)bundle.getSerializable("wrong_clicks_history");
 		measureHeights = (ArrayList<Integer>)bundle.getSerializable("measure_heights");
 		measureWidths  = (ArrayList<Integer>)bundle.getSerializable("measure_widths");
-		sheet = MidiSheetMusicActivity.sheet0;
+		sheet = TommyView2.sheet1;
 		bitmap_helper = new BitmapHelper(this, sheet, AREA1_zoom_x, AREA1_zoom_y);
 		blanks_ratio = bundle.getFloat("blanks_ratio");
 		num_right_clicks = bundle.getInt("num_right_clicks");
@@ -307,8 +338,8 @@ public class TommyView2 extends View implements Runnable {
 				Bitmap bmp = bitmap_helper.getTileBitmap(staff_idx, measure_idx);
 				int w = (int)(zm_x * bmp.getWidth());
 				int h = (int)(zm_y * bmp.getHeight());
-				Rect src = new Rect(0, 0, bmp.getWidth(), bmp.getHeight());
-				Rect dst = new Rect(x, y, x+w, y+h);
+				src.set(0, 0, bmp.getWidth(), bmp.getHeight());
+				dst.set(x, y, x+w, y+h);
 				NinePatchDrawable bk;
 				if(staff_idx == 0) {
 					bk = TommyConfig.getCurrentStyle().tile_bk_upper;
@@ -351,6 +382,8 @@ public class TommyView2 extends View implements Runnable {
 				if(status == MeasureStatus.HIDDEN || status == MeasureStatus.IN_SELECTION) {
 					curr_hl_staff = j;
 					curr_hl_measure = i;
+					curr_highlighted_millis = System.currentTimeMillis();
+					is_curr_measure_ok_first_try = true;
 					return;
 				}
 			}
@@ -371,21 +404,24 @@ public class TommyView2 extends View implements Runnable {
 			Toast.makeText(ctx, "Game finished! Congrats!", Toast.LENGTH_LONG).show();
 			game_state = GameState.FINISHED;
 			SharedPreferences.Editor editor = prefs_highscores.edit();
-			SharedPreferences.Editor editor_playcount = prefs_playcount.edit();
+			SharedPreferences.Editor editor_playcount = prefs_quizcount.edit();
+			SharedPreferences.Editor editor_quizstats = prefs_quizstats.edit();
 			SharedPreferences.Editor editor_lastplay  = prefs_lastplayed.edit();
+			SharedPreferences.Editor editor_finegrained=prefs_finegrained.edit();
 			
 			String key1 = String.format("%x", checksum), key2 = midi_title;
 			
 			// Update # plays of the current file.
 			num_times_played ++;
-			editor_playcount.putInt(key1, num_times_played);
-			editor_playcount.putInt(key2, num_times_played);
+			editor_playcount.putInt(midi_uri_string, num_times_played);
 			editor_playcount.commit();
 			
-			long last_play_us = System.currentTimeMillis();
-			editor_lastplay.putLong(key1, last_play_us);
-			editor_lastplay.putLong(key2, last_play_us);
-			editor_lastplay.commit();
+			{
+				long last_play_us = System.currentTimeMillis();
+				editor_lastplay.putLong(key1, last_play_us);
+				editor_lastplay.putLong(key2, last_play_us);
+				editor_lastplay.commit();
+			}
 			
 			long curr_millis = System.currentTimeMillis(); 
 			
@@ -399,15 +435,53 @@ public class TommyView2 extends View implements Runnable {
 
 			highscores.get(hs_array_idx).add(elapsed_millis);
 			timestamps.get(hs_array_idx).add(curr_millis);
-			right_clicks.get(hs_array_idx).add(num_right_clicks);
-			wrong_clicks.get(hs_array_idx).add(num_wrong_clicks);
+			right_clicks_history.get(hs_array_idx).add(num_right_clicks);
+			wrong_clicks_history.get(hs_array_idx).add(num_wrong_clicks);
 			
-			StringBuilder hssb = new StringBuilder();
-			hssb.append(TommyConfig.HSTSArraysToJSONString(highscores, timestamps, right_clicks, wrong_clicks));
-			Log.v("TommyView2", "New HS String="+hssb.toString());
+			String key = String.format("%x_HS", checksum);
 			
-			editor.putString(String.format("%x_HS", checksum), hssb.toString());
-			editor.commit();
+			long ts1, ts2, ts3, ts4;
+			ts1 = System.currentTimeMillis();
+			{ // Highscores
+				StringBuilder hssb = new StringBuilder();
+				hssb.append(TommyConfig.HSTSArraysToJSONString(highscores, timestamps, right_clicks_history, wrong_clicks_history));
+				editor.putString(key, hssb.toString());
+				editor.commit();
+			}
+			
+			ts2 = System.currentTimeMillis();
+			{ // Quiz Stats
+				String sz = TommyConfig.QuizCoarseStatisticsToJSONString(right_clicks_measures, wrong_clicks_measures, delays_measures);
+				editor_quizstats.putString(key1, sz);
+				Log.v("TommyView2", "New QuizStats String="+sz);
+				editor_quizstats.commit();
+			}
+			
+			ts3 = System.currentTimeMillis();
+			{ // Fine-grained Stats
+				String sz = TommyConfig.QuizFineStatisticsToJSONString(okclicks_history_f, millis_history_f);
+				editor_finegrained.putString(key1, sz);
+				editor_finegrained.commit();
+			}
+			
+			// Mastery Levels.
+			int NT = sheet.getActualNumberOfTracks();
+			String cksm = String.format("%x", checksum);
+			{
+				for(int i=0; i<NT; i++) {
+					for(int j=0; j<num_measures; j++) {
+						int st = masteries.get(i).get(j).getMasteryState();
+						measure_mastery_states.get(i).set(j, st);
+					}
+				}
+				String sz = TommyConfig.MasteryStateArrayToJSONString(measure_mastery_states);
+				editor_quizstats.putString(cksm + "_mastery_states", sz);
+				editor_quizstats.commit();
+			}
+			
+			ts4 = System.currentTimeMillis();
+			String msg = String.format("%d ms = %d HScore + %d QStats + %d QFineStats", ts4-ts1, ts2-ts1, ts3-ts2, ts4-ts3);
+			Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show();
 		}
 	}
 	
@@ -421,7 +495,7 @@ public class TommyView2 extends View implements Runnable {
 		final static int TRIPLECLICK_WINDOW = 300; // 300 ms
 		int touchx, touchy; // Screen coordinates
 		int deltax, deltay;
-		int touchid = -1; long last_click_millis = 0;
+		int touchid = -1; 
 		int click_count = 0;
 		public void clearDeltaXY() { deltax = deltay = 0; }
 		boolean touchDown(int id, int x, int y) {
@@ -429,12 +503,6 @@ public class TommyView2 extends View implements Runnable {
 				touchx = x; touchy = y;
 				touchid = id;
 				touches_on_bk ++;
-				last_click_millis = System.currentTimeMillis();
-				click_count ++;
-				if(click_count == 3) {
-					click_count = 0;
-					recycle_area.toggleZoom();
-				}
 				return true;
 			} else {
 				if(touchid != id) {
@@ -467,11 +535,119 @@ public class TommyView2 extends View implements Runnable {
 		}
 		boolean isTouched() { return (touchid!=-1); }
 		void update(long millis) {
-			if(millis - last_click_millis > TRIPLECLICK_WINDOW) {
-				click_count = 0;
-			}
 		}
 	}
+
+	static enum FloatingButtonType {
+		SEPARATOR,
+		LEFT_BUTTON,
+		RIGHT_BUTTON
+		// Focus and toggle zoom may be put on Separator since they arent frequently used!
+	};
+	class FloatingButton {
+		int W, H, x, y, touchid = -1, touchx, touchy; // Touch X and Touch Y are in screen coordinates
+		int touchx_begin, touchy_begin, deltay;
+		Bitmap bmp_label;
+		NinePatchDrawable bk;
+		FloatingButtonType type;
+		int id; // Left Button / Right Button
+		boolean need_redraw;
+		public FloatingButton (int _w, int _h, int _x, int _y, FloatingButtonType _ty) {
+			x = _x; y = _y; H = _h; W = _w; type = _ty;
+		}
+		public boolean intersect(int tx, int ty) {
+			if(tx > x && tx < x+W && ty > y && ty < y+H) return true;
+			else return false;
+		}
+		public boolean touchDown(int id, int tx, int ty) {
+			if(touchid == -1) {
+				need_redraw = true;
+				if(intersect(tx, ty)) {
+					touchid = id;
+					touchx = touchx_begin = tx; touchy = touchy_begin = ty;
+					deltay = 0;
+					switch(type) {
+					case SEPARATOR:
+						if(is_resizing_recycling_area == false) {
+							pinch_begin_AREA1_HGT = AREA1_HGT;
+							is_resizing_recycling_area = true;
+						}
+						break;
+					default: break;
+					}
+					return true;
+				} else return false;
+			} else return false;
+		}
+		public boolean touchMove(int id, int x, int y) {
+			if(touchid == id) {
+				deltay += y - touchy;
+				touchx = x; touchy = y; 
+			}
+			return true;
+		}
+		public boolean touchUp(int id) {
+			if(touchid != -1) { 
+				touchid = -1;
+				if(intersect(touchx, touchy)) {
+					switch(type) {
+						case SEPARATOR:
+							{
+								if(is_resizing_recycling_area == true) {
+									is_resizing_recycling_area = false;
+									AREA1_HGT = pinch_begin_AREA1_HGT= pinch_begin_AREA1_HGT + (touchy - touchy_begin);
+									clearDeltaXY();
+								}
+							}
+							break;
+						case LEFT_BUTTON:
+						{
+							recycle_area.animateScrollOneMeasureToTheLeft(); break;
+						}
+						case RIGHT_BUTTON:
+						{
+							recycle_area.animateScrollOneMeasureToTheRight();break;
+						}
+						default: break;
+					}
+				}
+			}
+			return true;
+		}
+		public void draw(Canvas c) {
+			dst.set(x, y, x+W, y+H);
+			if(bk != null) {
+				bk.setBounds(dst);
+				bk.draw(c);
+				if(isTouched()) {
+					paint.setColor(TommyConfig.getCurrentStyle().highlight_color);
+					paint.setAlpha(128);
+					paint.setStyle(Style.FILL);
+					c.drawRect(dst, paint);
+					paint.setAlpha(255);
+				}
+			}
+			switch(type) {
+			case LEFT_BUTTON:
+			case RIGHT_BUTTON:
+				dst.set((int)(x+2*density), (int)(y+H-2*density-5*density), 
+						(int)(x+W-2*density), (int)(y+H-2*density));
+				paint.setColor(TommyConfig.getCurrentStyle().highlight_color);
+				paint.setStyle(Style.STROKE);
+				c.drawRect(dst, paint);
+			break;
+				default: break;
+			}
+			need_redraw = false;
+		}
+		public void clearDeltaXY() { deltay = 0; }
+		public boolean isTouched() {
+			if(touchid == -1) return false;
+			else return true;
+		}
+	}
+	FloatingButton separator, left_button, right_button;
+	
 	
 	// For making choice.
 	class SelectionTile {
@@ -484,50 +660,64 @@ public class TommyView2 extends View implements Runnable {
 		final static long SHAKE_DURATION = 500;
 		boolean is_shaking = false;
 		int id = 0;
+		Bitmap bmp;
 		
 		public SelectionTile(int _x, int _y, int w, int h) {
-			x = _x; y = _y; W = w; H = h; pad = (int)(4*density);
+			initLayout(_x, _y, w, h);
 			staff_idx = measure_idx = -1;
 			touchid = -1;
 			shake_delta_x = 0;
 		}
 		
+		public void initLayout(int _x, int _y, int _W, int _H) {
+			x = _x; y = _y; W = _W; H = _H; pad = (int)(4*density);
+			computeBitmapPosition();
+		}
+		
+		private void computeBitmapPosition() {
+			if(staff_idx == -1 || measure_idx == -1) { return; }
+			else {
+				int bw = bitmap_helper.getTileBitmapWidth(staff_idx, measure_idx), 
+						bh = bitmap_helper.getTileBitmapHeight(staff_idx, measure_idx);
+				
+					float zoom_w = 1.0f * (W - 2*pad) / bw;
+					float zoom_h = 1.0f * (H - 2*pad) / bh;
+					
+					if(zoom_w < zoom_h) zoom = zoom_w;
+					else zoom = zoom_h;	
+					
+					bmp_hw = (int)(bw * 0.5f * zoom);
+					bmp_hh = (int)(bh * 0.5f * zoom);
+					bmp_x  = x+W/2 - bmp_hw;
+					bmp_y  = y+H/2 - bmp_hh;
+			}
+		}
 		public void setMeasure(int _staff_idx, int _measure_idx) {
 			need_redraw = true;
 			if(_staff_idx == -1 || _measure_idx == -1) {; }
 			else {
 				measure_idx = _measure_idx; staff_idx = _staff_idx;
-				int bw = bitmap_helper.getTileBitmapWidth(staff_idx, measure_idx), 
-					bh = bitmap_helper.getTileBitmapHeight(staff_idx, measure_idx);
-			
-				float zoom_w = 1.0f * (W - 2*pad) / bw;
-				float zoom_h = 1.0f * (H - 2*pad) / bh;
-				
-				if(zoom_w < zoom_h) zoom = zoom_w;
-				else zoom = zoom_h;	
-				
-				bmp_hw = (int)(bw * 0.5f * zoom);
-				bmp_hh = (int)(bh * 0.5f * zoom);
-				bmp_x  = x+W/2 - bmp_hw;
-				bmp_y  = y+H/2 - bmp_hh;
-				
 				measures_status.get(_staff_idx).set(_measure_idx, MeasureStatus.IN_SELECTION);
+				computeBitmapPosition();
 			}
 			Log.v("SelectionTile", String.format("X=%d Y=%d zoom=%f", x, y, zoom));
 		}
-		
-		public void draw(Canvas c) {
-			if(touchid != -1) {
-				paint.setColor(0xFFC0FFC0);
-				paint.setStyle(Style.FILL);
-				c.drawRect(x, y, x+W, y+H, paint);
-			}
-			
+
+		void prepareToDraw() {
+			bmp = null;
 			if(staff_idx != -1 && measure_idx != -1) {
-				Bitmap bmp = bitmap_helper.getTileBitmap(staff_idx, measure_idx);
+				bmp = bitmap_helper.getTileBitmap(staff_idx, measure_idx);
+			}
+		}
+		public void draw(Canvas c) {
+			if(bmp != null) {
 				paint.setFilterBitmap(true);
-				Rect src = new Rect(0, 0, bmp.getWidth(), bmp.getHeight());
-				Rect dst = new Rect(bmp_x + shake_delta_x, bmp_y, bmp_x+2*bmp_hw + shake_delta_x, bmp_y+2*bmp_hh);
+				int ddy = 0;
+				if(touchid != -1) ddy = (int)(4*density);
+				src.set(0, 0, bmp.getWidth(), bmp.getHeight());
+				dst.set(bmp_x + shake_delta_x + ddy,
+						ddy + bmp_y, bmp_x+2*bmp_hw + shake_delta_x - ddy, 
+						-ddy + bmp_y+2*bmp_hh);
 				NinePatchDrawable bk;
 				if(staff_idx == 0) {
 					bk = TommyConfig.getCurrentStyle().tile_bk_upper;
@@ -539,17 +729,18 @@ public class TommyView2 extends View implements Runnable {
 			} else {
 				float cx = x + W/2, cy = y + H/2, r = (H<W) ? H/4 : W/4;
 				if(game_state == GameState.NOT_STARTED) {
-					paint.setColor(0xFFC0C0C0);
+					paint.setColor(TommyConfig.getCurrentStyle().btn_text_color);
+					paint.setTextSize(16*density);
 					String x;
 					switch(id) {
 					case 0:
-						x = "25% blank"; break;
+						x = difficulty_1; break;
 					case 1:
-						x = "50% blank"; break;
+						x = difficulty_2; break;
 					case 2:
-						x = "75% blank"; break;
+						x = difficulty_3; break;
 					case 3:
-						x = "All blank"; break;
+						x = difficulty_4; break;
 					default:
 						x = "";
 					}
@@ -605,61 +796,99 @@ public class TommyView2 extends View implements Runnable {
 			return true;
 		}
 		
+		private void pushFineGrainedHistory(int staff_idx, int measure_idx, boolean is_ok, long millis) {
+			int actual_sidx = actual_track_idx.get(staff_idx);
+			for(int age = TommyConfig.FINEGRAINED_HISTORY_LENGTH-2; age>=0; age--) {
+				Log.v("fine grained", "" + age + ","+actual_sidx+","+measure_idx);
+				boolean tmp = okclicks_history_f.get(age)
+						.get(actual_sidx)
+						.get(measure_idx);
+				okclicks_history_f.get(age+1).get(actual_sidx).set(measure_idx, tmp);
+				long tmp1 = millis_history_f.get(age).get(actual_sidx).get(measure_idx);
+				millis_history_f.get(age+1).get(actual_sidx).set(measure_idx, tmp1);
+			}
+			okclicks_history_f.get(0).get(actual_sidx).set(measure_idx, is_ok);
+			millis_history_f.get(0).get(actual_sidx).set(measure_idx, millis);
+		}
+		
 		private void onTileChosenInGame() {
 			if(staff_idx != -1 && measure_idx != -1) {
-					int hash_my = measureHashes.get(staff_idx).get(measure_idx),
-						hash_ans = measureHashes.get(curr_hl_staff).get(curr_hl_measure);
-					Log.v("touchUp", String.format("hash=%x, %x", hash_my, hash_ans));
-					if(hash_ans == hash_my) {
-						num_right_clicks ++;
-						// When hashes collide
-						// Swap the actual underlying tiles
-						if(!(curr_hl_staff == staff_idx && curr_hl_measure == measure_idx)) {
-							
-							MeasureStatus st_actual = measures_status.get(curr_hl_staff).get(curr_hl_measure);
-							if(st_actual == MeasureStatus.IN_ANIMATION) {
-								throw new RuntimeException("Should not be in animation");
-							} else if(st_actual == MeasureStatus.IN_SELECTION) {
-								boolean is_ok = false;
-								for(SelectionTile s : tiles) {
-									if(s != this && s.measure_idx == curr_hl_measure && s.staff_idx == curr_hl_staff) {
-										s.setMeasure(staff_idx, measure_idx);
-										is_ok = true;
-										break;
-									}
-								}
-								if(!is_ok) {
-									throw new RuntimeException("Should be ok");
+				int hash_my = measureHashes.get(staff_idx).get(measure_idx),
+					hash_ans = measureHashes.get(curr_hl_staff).get(curr_hl_measure);
+				Log.v("touchUp", String.format("hash=%x, %x", hash_my, hash_ans));
+				if(hash_ans == hash_my) {
+					num_right_clicks ++;
+					
+					
+					{
+						// Add to statistics
+						long delta = System.currentTimeMillis() - curr_highlighted_millis;
+						int rc = right_clicks_measures.get(actual_track_idx.get(curr_hl_staff)).get(curr_hl_measure);
+						right_clicks_measures.get(actual_track_idx.get(curr_hl_staff)).set(curr_hl_measure, rc+1);
+						long millis = delays_measures.get(actual_track_idx.get(curr_hl_staff)).get(curr_hl_measure);
+						delays_measures.get(actual_track_idx.get(curr_hl_staff)).set(curr_hl_measure, millis + delta);
+						
+						pushFineGrainedHistory(curr_hl_staff, curr_hl_measure, is_curr_measure_ok_first_try, delta);
+						int actual_sidx = actual_track_idx.get(curr_hl_staff);
+						masteries.get(actual_sidx).get(curr_hl_measure).appendOutcome(is_curr_measure_ok_first_try);
+					}
+					
+					
+					// When hashes collide
+					// Swap the actual underlying tiles
+					if(!(curr_hl_staff == staff_idx && curr_hl_measure == measure_idx)) {
+						
+						MeasureStatus st_actual = measures_status.get(curr_hl_staff).get(curr_hl_measure);
+						if(st_actual == MeasureStatus.IN_ANIMATION) {
+							throw new RuntimeException("Should not be in animation");
+						} else if(st_actual == MeasureStatus.IN_SELECTION) {
+							boolean is_ok = false;
+							for(SelectionTile s : tiles) {
+								if(s != this && s.measure_idx == curr_hl_measure && s.staff_idx == curr_hl_staff) {
+									s.setMeasure(staff_idx, measure_idx);
+									is_ok = true;
+									break;
 								}
 							}
-							MeasureStatus st_mine   = measures_status.get(staff_idx).get(measure_idx);
-							measures_status.get(curr_hl_staff).set(curr_hl_measure, st_mine);
-							measures_status.get(staff_idx).set(measure_idx, st_actual);
-	
-							{
-								String blah = String.format("Hash correction (%d,%d(%s)) <-> (%d,%d(%s))",
-									curr_hl_staff, curr_hl_measure, st_actual.toString(),
-									staff_idx, measure_idx, st_mine.toString());
-								Toast.makeText(ctx, blah, Toast.LENGTH_LONG).show();
+							if(!is_ok) {
+								throw new RuntimeException("Should be ok");
 							}
-							
-							setMeasure(curr_hl_staff, curr_hl_measure);
-							
+						}
+						MeasureStatus st_mine   = measures_status.get(staff_idx).get(measure_idx);
+						measures_status.get(curr_hl_staff).set(curr_hl_measure, st_mine);
+						measures_status.get(staff_idx).set(measure_idx, st_actual);
+
+						
+						if(DEBUG) {
+							String blah = String.format("Hash correction (%d,%d(%s)) <-> (%d,%d(%s))",
+								curr_hl_staff, curr_hl_measure, st_actual.toString(),
+								staff_idx, measure_idx, st_mine.toString());
+							Toast.makeText(ctx, blah, Toast.LENGTH_LONG).show();
 						}
 						
-						TileInAnimation tia = new TileInAnimation(bmp_x, bmp_y, staff_idx, measure_idx, zoom);
-						synchronized(tiles_in_animation) {
-							tiles_in_animation.add(tia);
-						}
-						setRandomHiddenMeasure();
-						advanceHighlightedStaffMeasureIdx();
-						need_redraw = true;
-					} else {
-						num_wrong_clicks ++;
-						startShaking();
+						setMeasure(curr_hl_staff, curr_hl_measure);
+						
 					}
+					
+					TileInAnimation tia = new TileInAnimation(bmp_x, bmp_y, staff_idx, measure_idx, zoom);
+					synchronized(tiles_in_animation) {
+						tiles_in_animation.add(tia);
+					}
+					setRandomHiddenMeasure();
+					advanceHighlightedStaffMeasureIdx();
+					need_redraw = true;
 				} else {
+					num_wrong_clicks ++;
+					{// Add to statistics
+						Log.v("TommyView2", String.format("%d, %d", actual_track_idx.get(curr_hl_staff), curr_hl_measure));
+						int wc = wrong_clicks_measures.get(actual_track_idx.get(curr_hl_staff)).get(curr_hl_measure);
+						wrong_clicks_measures.get(actual_track_idx.get(curr_hl_staff)).set(curr_hl_measure, wc+1);
+						is_curr_measure_ok_first_try = false;
+					}
+					startShaking();
 				}
+			} else {
+			}
 		}
 		private void onTileChosenBeforeGame() {
 			switch(id) {
@@ -671,6 +900,19 @@ public class TommyView2 extends View implements Runnable {
 				blanks_ratio = 0.75f; startGame(); break;
 			case 3:
 				blanks_ratio = 1.0f; startGame(); break;
+		/*
+			case 4: {
+				AREA1_HGT += density*10.0f;
+				if(curr_layout_id == 1) { adjustSizeLayout1(); }
+				else if(curr_layout_id == 2) adjustSizeLayout2();
+				break;
+			}
+			case 5: {
+				AREA1_HGT -= density * 10.0f;
+				if(curr_layout_id == 1) { adjustSizeLayout1(); }
+				else if(curr_layout_id == 2) adjustSizeLayout2();
+			}
+		*/
 			default:
 				break;
 			}
@@ -756,12 +998,12 @@ public class TommyView2 extends View implements Runnable {
 		ArrayList<Integer> tiles_x = new ArrayList<Integer>();
 		boolean need_redraw = false;
 		
-		int W, H, x, y, touchx, touchy, touchid, deltax, deltay, touch_count;
+		int W, H, x, y, touchx, touchy, touchid, deltax, deltay, touch_xbegin, touch_count;
 		float vel_x;
-		long last_inertia_movt_millis, last_touch_millis;
+		long last_touch_millis;
 		boolean is_inertia;
 		
-		private int score_x_offset; // 自譜子的bmp的x=score_x_offset處開始顯示。
+		private float score_x_offset; // 自譜子的bmp的x=score_x_offset處開始顯示。
 		int score_x_offset_max, score_x_offset_min;
 		float zoom_y, zoom_0, zoom_1;
 		int next_zoom_idx = 1;
@@ -773,20 +1015,26 @@ public class TommyView2 extends View implements Runnable {
 		
 		// Animation
 		float zoom_start, zoom_end;
-		int score_x_offset_start, score_x_offset_end;
+		float score_x_offset_start, score_x_offset_end;
 		long anim_begin_millis, zoom_begin_millis;
 		static final int ANIM_DURATION = 500; // 500 ms
 		boolean is_in_fling = false, is_in_zooming = false;
 		
-		public RecycleArea(int _W, int _H, float _zoom_x, float _zoom_y) {
-			W = _W; H = _H; 
-			zoom_x = zoom_0 = _zoom_x;
-			zoom_y = _zoom_y;
-			zoom_1 = zoom_0 * 0.5f;
+		public RecycleArea(int _W, int _H) {
+			initLayout(_W, _H);
 			x = 0; y = 0; vel_x = 0; touchid = -1;
-			intro_width = H*2; outro_width = H*2;
+			intro_width = W; outro_width = W;
 			touch_count = 0;
 			Log.v("RecycleArea", String.format("W=%d H=%d", W, H));
+		}
+		
+		void initLayout(int _W, int _H) {
+			zoom_0  = zoom_y = 1.0f * AREA1_HGT / AREA1_bitmap_hgt0;
+			zoom_1 = zoom_0 * 0.5f;
+			if(next_zoom_idx == 1) {
+				zoom_x = zoom_0;
+			} else zoom_x = zoom_1;
+			W = _W; H = _H;
 		}
 		
 		public void toggleZoom() {
@@ -806,13 +1054,19 @@ public class TommyView2 extends View implements Runnable {
 				x = x + bitmap_helper.getTileBitmapWidth(0, i);
 			}
 			score_x_offset_max = x;
-			recycle_area_score_x_offset = score_x_offset = score_x_offset_min = (int)(-intro_width / zoom_x);
+			score_x_offset_min = (int)(-intro_width / zoom_x);
+		}
+		
+		void setXPositionToLeftMost() {
+			recycle_area_score_x_offset = score_x_offset = score_x_offset_min;
 		}
 		
 		void getTileXYOffsetZoom(int idx_staff, int idx_measure, int[] xy) {
 			int x = tiles_x.get(idx_measure);
 			int y = 0;
-			if(idx_staff == 1) y += bitmap_helper.getTileBitmapHeight(0, 0);
+			for(int i=0; i<idx_staff; i++) {
+				y += bitmap_helper.getTileBitmapHeight(i, 0);
+			}
 			xy[0] = x; xy[1] = y;
 		}
 		
@@ -825,7 +1079,7 @@ public class TommyView2 extends View implements Runnable {
 				
 				if(!is_draw_shadow) {
 					if(idx_staff == curr_hl_staff && idx_measure == curr_hl_measure) {
-						paint.setColor(0xFFC0C0FF);
+						paint.setColor(TommyConfig.getCurrentStyle().highlight_color);
 						paint.setStyle(Style.STROKE);
 						paint.setStrokeWidth(density * 2.0f);
 						c.drawRect(x+2, y+2, x+dx-2, y+dy-2, paint);
@@ -847,8 +1101,8 @@ public class TommyView2 extends View implements Runnable {
 						b = null;
 						*/
 					} else {
-						Rect src = new Rect(0, 0, bmp.getWidth(), bmp.getHeight());
-						Rect dst = new Rect(x, y, x+dx, y+dy);
+						src.set(0, 0, bmp.getWidth(), bmp.getHeight());
+						dst.set(x, y, x+dx, y+dy);
 						NinePatchDrawable bk;
 						if(idx_staff == 0) {
 							bk = TommyConfig.getCurrentStyle().tile_bk_upper;
@@ -880,7 +1134,7 @@ public class TommyView2 extends View implements Runnable {
 		}
 		
 		public void draw(Canvas c) {
-			paint.setColor(Color.GRAY);
+			paint.setColor(TommyConfig.getCurrentStyle().background_color);
 			paint.setStyle(Style.FILL);
 			paint.setFilterBitmap(true);
 			c.drawRect(0, 0, W, H, paint);
@@ -911,67 +1165,79 @@ public class TommyView2 extends View implements Runnable {
 				paint.setTextAlign(Align.LEFT);
 				paint.setAntiAlias(true);
 				final int pad = (int)(density * 3.0f);
-				Rect bb = new Rect();
 				
 				long delta = elapsed_millis;
 				float seconds_elapsed = delta / 1000.f;
 				
 				if(isIntroVisible()) {
+					NinePatchDrawable bk = TommyConfig.getCurrentStyle().background_separator;
 					int intro_x0 = (int)(-score_x_offset * zoom_x - intro_width);
-					paint.setStrokeWidth(2.0f*density);
-					c.drawRect(intro_x0, y, intro_x0+intro_width, y+H, paint);
+					dst.set(intro_x0, y, intro_x0+intro_width, y+H);
+					bk.setBounds(dst);
+					bk.draw(c);
 					paint.setStrokeWidth(1.0f*density);
 					
 					{
-						paint.setTextSize(H/6.0f);
+						float speculative_txt_size = H / 6.0f;
+						paint.setTextSize(speculative_txt_size);
 						paint.setStyle(Style.FILL);
 						int y1 = y + pad + (int)(12*density);
 						String s = midi_title;
-						paint.getTextBounds(s, 0, s.length(), bb);
-						c.drawText(s, intro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
-						y1 = y1 + bb.bottom - bb.top;
+						paint.getTextBounds(s, 0, s.length(), src);
+						if(src.width() > intro_width) {
+							float txtscale = intro_width * 1.0f / src.width();
+							paint.setTextScaleX(txtscale);
+							
+						}
+						paint.setColor(TommyConfig.getCurrentStyle().btn_text_color);
+						c.drawText(s, intro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
+						paint.setTextScaleX(1.0f);
+						y1 = y1 + src.bottom - src.top;
 						
-						s = String.format("%d measures, %d notes", num_measures, num_notes);
-						paint.getTextBounds(s, 0, s.length(), bb);
-						c.drawText(s, intro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
-						y1 = y1 + bb.bottom - bb.top;
+						s = String.format("%d measures", num_measures);
+						paint.getTextBounds(s, 0, s.length(), src);
+						c.drawText(s, intro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
+						y1 = y1 + src.bottom - src.top;
 
 						s = String.format("%.1f seconds", seconds_elapsed);
-						paint.getTextBounds(s, 0, s.length(), bb);
-						c.drawText(s, intro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
-						y1 = y1 + bb.bottom - bb.top;
+						paint.getTextBounds(s, 0, s.length(), src);
+						c.drawText(s, intro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
+						y1 = y1 + src.bottom - src.top;
 
 						s = String.format("%d/%d clicks", num_right_clicks, num_wrong_clicks);
-						paint.getTextBounds(s, 0, s.length(), bb);
-						c.drawText(s, intro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
+						paint.getTextBounds(s, 0, s.length(), src);
+						c.drawText(s, intro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
 					}
 				}
 				if(isOutroVisible()) {
+					NinePatchDrawable bk = TommyConfig.getCurrentStyle().background_separator;
 					int outro_x0 = (int)((score_x_offset_max - score_x_offset) * zoom_x);
-					c.drawRect(outro_x0, y, outro_x0+outro_width, y+H, paint);
+					bk.setBounds(outro_x0, y, outro_x0+outro_width, y+H);
+					bk.draw(c);
 					paint.setTextSize(H/6.0f);
 					paint.setStyle(Style.FILL);
 
 					int y1 = y + pad + (int)(12*density);
 					String s;
 					if(game_state == GameState.PLAYING) {
-						s = String.format("%d / %d tiles to go!", num_tiles_total, num_tiles_hidden);
+						s = String.format("%d/%d", num_tiles_total, num_tiles_hidden) + tiles_to_go;
 					} else if(game_state == GameState.NOT_STARTED) {
-						s = "Please make a choice";
+						s = please_make_a_choice;
 					} else {
-						s = "Well done!";
+						s = well_done;
 					}
-					paint.getTextBounds(s, 0, s.length(), bb);
-					c.drawText(s, outro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
-					y1 = y1 + bb.bottom - bb.top;
+					paint.setColor(TommyConfig.getCurrentStyle().btn_text_color);
+					paint.getTextBounds(s, 0, s.length(), src);
+					c.drawText(s, outro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
+					y1 = y1 + src.bottom - src.top;
 					
 					s = String.format("%.1f seconds", seconds_elapsed);
-					paint.getTextBounds(s, 0, s.length(), bb);
-					c.drawText(s, outro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
-					y1 = y1 + bb.bottom - bb.top;
+					paint.getTextBounds(s, 0, s.length(), src);
+					c.drawText(s, outro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
+					y1 = y1 + src.bottom - src.top;
 					
 					s = String.format("%d/%d clicks", num_right_clicks, num_wrong_clicks);
-					c.drawText(s, outro_x0 + pad, y1 + (bb.bottom-bb.top)/2, paint);
+					c.drawText(s, outro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
 					
 				}
 			}
@@ -989,7 +1255,7 @@ public class TommyView2 extends View implements Runnable {
 			
 			need_redraw = false;
 		}
-		public boolean panScoreByScreenX(int dx) {
+		public boolean panScoreByScreenX(float dx) {
 			boolean is_oob = false;
 			score_x_offset -= dx / zoom_x;
 			if(score_x_offset < score_x_offset_min) {
@@ -1031,27 +1297,60 @@ public class TommyView2 extends View implements Runnable {
 				return;
 			}
 			need_redraw = true;
-			long delta = millis - last_inertia_movt_millis;
-			last_inertia_movt_millis = millis;
-			float vel_dec = delta / 10;
-			if(vel_x > 0) vel_dec = vel_dec * (-1);
-			float vel_x_new = vel_x + vel_dec;
-			if(vel_x > 0) {
-				if(vel_x_new < 0) {
-					vel_x_new = 0;
-					is_inertia = false;
-				}
+			vel_x = vel_x * 0.98f;
+			if(Math.abs(vel_x) < 0.3f*density) {
+				vel_x = 0.0f;
+				is_inertia = false;
 			} else {
-				if(vel_x_new > 0) {
-					vel_x_new = 0;
-					is_inertia = false;
+				if(panScoreByScreenX(vel_x)) {
+					vel_x = 0.0f; // If true then Out Of Bounds.
 				}
 			}
-			if(panScoreByScreenX((int)vel_x)) vel_x_new = 0.0f; // If true then Out Of Bounds.
-			vel_x = vel_x_new;
 		}
 		
-		private void startAnimMoveTo(int score_x_target) {
+		void animateScrollOneMeasureToTheRight() {
+			if(is_in_fling) {
+				is_in_fling = false;
+				score_x_offset = score_x_offset_end;
+			}
+			int rightmost = (int)(score_x_offset + (width + 10)/ zoom_x);
+			int idx = 0, x = 0;
+			while(idx < measureWidths.size()) {
+				int x_next = x + measureWidths.get(idx);
+				if(x_next > rightmost) {
+					startAnimMoveTo(x_next - width / zoom_x);
+					break;
+				}
+				x = x_next;
+				idx ++;
+			}
+			if(idx == measureWidths.size()) {
+				startAnimMoveTo(x);
+			}
+		}
+		
+		void animateScrollOneMeasureToTheLeft() {
+			if(is_in_fling) {
+				is_in_fling = false;
+				score_x_offset = score_x_offset_end;
+			}
+			int leftmost = (int)(score_x_offset - 10/zoom_x);
+			int idx = 0, x = 0;
+			while(idx < measureWidths.size()) {
+				int x_next = x + measureWidths.get(idx);
+				if(x_next >= leftmost) {
+					startAnimMoveTo(x);
+					break;
+				}
+				x = x_next;
+				idx ++;
+			}
+			if(idx == 0) {
+				startAnimMoveTo(-intro_width / zoom_x);
+			}
+		}
+		
+		private void startAnimMoveTo(float score_x_target) {
 			score_x_offset_start = score_x_offset;
 			score_x_offset_end = score_x_target;
 			if(score_x_offset_end > score_x_offset_max) {
@@ -1070,10 +1369,12 @@ public class TommyView2 extends View implements Runnable {
 		}
 		
 		void update(long millis) {
+			if(is_inertia) {
+				this.updateInertialMovement(millis);
+			}
+			
 			if(!is_in_fling) {
-				if(touchid == -1) {
-					recycle_area.updateInertialMovement(millis);
-				} else {
+				if(touchid != -1) {
 					panScoreByScreenX(deltax);
 					deltax = deltay = 0;
 				}
@@ -1110,11 +1411,14 @@ public class TommyView2 extends View implements Runnable {
 				}
 			}
 		}
-		
+		boolean intersect(int tx, int ty) {
+			if(tx > x && tx < x+W && ty > y && ty < y+H) return true;
+			return false;
+		}
 		
 		boolean touchDown(int id, int tx, int ty) {
-			if(tx > x && tx < x+W && ty > y && ty < y+H) {
-				touchx = tx; touchy = ty;
+			if(intersect(tx, ty)) {
+				touchx = touch_xbegin = tx; touchy = ty;
 				touchid = id;
 				vel_x = 0;
 				last_touch_millis = System.currentTimeMillis();
@@ -1144,16 +1448,20 @@ public class TommyView2 extends View implements Runnable {
 		
 		boolean touchUp(int id) {
 			if(id == touchid) {
-				int dx = deltax;//, dy = d.deltay;
-				recycle_area.vel_x = dx;
-				recycle_area.panScoreByScreenX(dx);
+				int dx = touch_xbegin - touchx;//, dy = d.deltay;
+				long delta = System.currentTimeMillis() - last_touch_millis;
+				this.vel_x = -dx*1.0f / (delta /1000.0f) / 120.0f;
+				deltax = 0;
 				touchid = -1;
+				this.is_inertia = true;
+				Log.v("RecycleArea TouchUp", "vel_x="+vel_x);
+				need_redraw = true;
 				return true;
 			}
 			return false;
 		}
 
-		public void setScoreXOffset(int x) {
+		public void setScoreXOffset(float x) {
 			if(x < score_x_offset_min) x = score_x_offset_min;
 			if(x > score_x_offset_max) x = score_x_offset_max;
 			score_x_offset = x;
@@ -1162,18 +1470,30 @@ public class TommyView2 extends View implements Runnable {
 	
 	private void layout1() {
 		AREA1_zoom_x = AREA1_zoom_y = 1.0f * AREA1_HGT / AREA1_bitmap_hgt0;
-		recycle_area = new RecycleArea(width, AREA1_HGT, AREA1_zoom_x, AREA1_zoom_y);
+		recycle_area = new RecycleArea(width, AREA1_HGT); //, AREA1_zoom_x, AREA1_zoom_y);
 		// 2 times the num of pixels * color depth (16b)
 		BITMAP_MEM_BUDGET = (int)(2 * 2 *width * height * (1.0f*AREA1_bitmap_hgt0 / AREA1_HGT));
-		
 		recycle_area.computeXPositions();
+		recycle_area.setXPositionToLeftMost();
+		separator = new FloatingButton(width, (int)(SEPARATOR_HEIGHT*density), 0, height/3,
+				FloatingButtonType.SEPARATOR);
+		float separator_hgt = SEPARATOR_HEIGHT*density;
+		float vert_btn_width = NAVIGATION_BUTTON_WIDTH*density;
+		int height_btns = (int)(height - AREA1_HGT - separator_hgt);  
+		
+		left_button = new FloatingButton((int)(vert_btn_width), height_btns, 0, (int)(AREA1_HGT+separator_hgt),
+				FloatingButtonType.LEFT_BUTTON);
+		right_button= new FloatingButton((int)(vert_btn_width), height_btns, (int)(width-vert_btn_width), 
+				(int)(AREA1_HGT + separator_hgt), FloatingButtonType.RIGHT_BUTTON);
+		separator.bk = left_button.bk = right_button.bk = TommyConfig.getCurrentStyle().background_separator;
+		
 		final int N_COLS = 4, N_ROWS = 2;
-		final int TILEW = width/N_COLS, TILEH = (height*2/3)/2;
+		final int TILEW = width/N_COLS, TILEH = (int)((height*2/3 - SEPARATOR_HEIGHT - SEPARATOR_HEIGHT*density)/2);
 		tiles.clear();
 		int tile_id = 0;
 		for(int i=0; i<N_ROWS; i++) {
 			for(int j=0; j<N_COLS; j++) {
-				int x = j * TILEW, y = i * TILEH + height/3;
+				int x = (int)(vert_btn_width + j * TILEW), y = i * TILEH + height/3;
 				SelectionTile st = new SelectionTile(x, y, TILEW, TILEH);
 				st.id = tile_id;
 				tile_id ++;
@@ -1183,30 +1503,93 @@ public class TommyView2 extends View implements Runnable {
 		
 		bitmap_helper.bitmap_zoom_x = 1.0f;
 		bitmap_helper.bitmap_zoom_y = 1.0f;
+		adjustSizeLayout1();
+	}
+	
+	private void adjustSizeLayout1() {
+
+		if(AREA1_HGT < 30) AREA1_HGT = 30;
+		if(AREA1_HGT > height-30) AREA1_HGT = height-30;
+		
+		recycle_area.initLayout(width, AREA1_HGT);
+		recycle_area.computeXPositions();
+		separator.y = AREA1_HGT;
+		final int N_COLS = 4, N_ROWS = 2;
+		float separator_hgt = SEPARATOR_HEIGHT * density;
+		float vert_btn_width = NAVIGATION_BUTTON_WIDTH * density;
+		left_button.H = right_button.H = (int)(height - AREA1_HGT - separator_hgt);
+		left_button.y = right_button.y = (int)(AREA1_HGT + separator_hgt);
+		final int TILEW = (int)(width-2*vert_btn_width)/N_COLS, TILEH = (int)((height - AREA1_HGT - separator_hgt)/2);
+		int idx = 0;
+		for(int i=0; i<N_ROWS; i++) {
+			for(int j=0; j<N_COLS; j++) {
+				int x = (int)(vert_btn_width + j*TILEW), y = i*TILEH + (int)(AREA1_HGT + separator_hgt);
+				tiles.get(idx).initLayout(x, y, TILEW, TILEH);
+				idx++;
+			}
+		}
 	}
 	
 	private void layout2() {
 		AREA1_zoom_x = AREA1_zoom_y = 1.0f * AREA1_HGT / AREA1_bitmap_hgt0;
-		recycle_area = new RecycleArea(width, (int)(AREA1_HGT), AREA1_zoom_x, AREA1_zoom_y);
+		recycle_area = new RecycleArea(width, (int)(AREA1_HGT)); //, AREA1_zoom_x, AREA1_zoom_y);
 		BITMAP_MEM_BUDGET = (int)(2 * 2 * width * height * (1.0f*AREA1_bitmap_hgt0 / AREA1_HGT));
-
 		recycle_area.computeXPositions();
+		recycle_area.setXPositionToLeftMost();
+		float separator_hgt = SEPARATOR_HEIGHT*density;
+		
+		int btn_thickness = (int)(NAVIGATION_BUTTON_WIDTH * density);
+		
+		separator = new FloatingButton(width, (int)(separator_hgt), 0, AREA1_HGT,
+				FloatingButtonType.SEPARATOR);
+		
+		
+		left_button = new FloatingButton(width/2, btn_thickness, 
+				0, (int)(height - btn_thickness),
+				FloatingButtonType.LEFT_BUTTON);
+		right_button= new FloatingButton(width/2, btn_thickness,
+				width/2, (int)(height - btn_thickness), 
+				FloatingButtonType.RIGHT_BUTTON);
+		
+		left_button.bk = right_button.bk = separator.bk = TommyConfig.getCurrentStyle().background_separator;
 		final int N_COLS = 2, N_ROWS = 4;
-		final int TILEW = width/N_COLS, TILEH = (int)((height-AREA1_HGT)/N_ROWS);
+		final int TILEW = (int)(width/N_COLS), 
+				TILEH = (int)((height-AREA1_HGT-SEPARATOR_HEIGHT*density-btn_thickness)/N_ROWS);
 		tiles.clear();
 		int tile_id = 0;
 		for(int i=0; i<N_ROWS; i++) {
 			for(int j=0; j<N_COLS; j++) {
-				int x = j * TILEW, y = i * TILEH + (int)(AREA1_HGT);
+				int x = (int)(j * TILEW), y = i * TILEH + (int)(AREA1_HGT + separator_hgt);
 				SelectionTile st = new SelectionTile(x, y, TILEW, TILEH);
 				st.id = tile_id;
 				tile_id ++;
 				tiles.add(st);
 			}
 		}
-
 		bitmap_helper.bitmap_zoom_x = 1.0f;
 		bitmap_helper.bitmap_zoom_y = 1.0f;
+	}
+	private void adjustSizeLayout2() {
+		if(AREA1_HGT < 30) AREA1_HGT = 30;
+		if(AREA1_HGT > height-30) AREA1_HGT = height-30;
+		recycle_area.initLayout(width, AREA1_HGT);
+		recycle_area.computeXPositions();
+		separator.y = AREA1_HGT;
+		final int N_COLS = 2, N_ROWS = 4;
+		
+		float separator_hgt = SEPARATOR_HEIGHT*density;
+		float button_thickness = NAVIGATION_BUTTON_WIDTH*density;
+				
+		int TILEW = (int)((width)/N_COLS), 
+				TILEH = (int)((height-AREA1_HGT-separator_hgt-button_thickness)/N_ROWS);
+		int idx = 0;
+		for(int i=0; i<N_ROWS; i++) {
+			for(int j=0; j<N_COLS; j++) {
+				int x = (int)(j*TILEW), y = i*TILEH + (int)(AREA1_HGT + separator_hgt);
+				tiles.get(idx).initLayout(x, y, TILEW, TILEH);
+				idx ++;
+			}
+		}
 	}
 	
 	int getMeasureStatusCountByType(MeasureStatus s) {
@@ -1313,10 +1696,9 @@ public class TommyView2 extends View implements Runnable {
 	// 但是其实是不应该绑在一起的
 	private void initMidiFile() {
 		MidiFile midifile = new MidiFile(midi_data, midi_title);
-		MidiSheetMusicActivity.sheet0 = new SheetMusic(ctx);
-		sheet = MidiSheetMusicActivity.sheet0;
-		sheet.getHolder().setFixedSize(200, 200);
-		sheet.init(midifile, null);
+		sheet = TommyView2.sheet1 = new SheetMusic(ctx);
+		sheet.is_tommy_linebreak = true; // Otherwise NullPointer Error
+		sheet.init(midifile, options);
 		sheet.setVisibility(View.GONE);
 		sheet.tommyFree();
 		CRC32 crc = new CRC32();
@@ -1351,15 +1733,34 @@ public class TommyView2 extends View implements Runnable {
 			for(int i=0; i<TommyConfig.BLANK_RATIOS.length; i++) {
 				highscores.add(new ArrayList<Long>());
 				timestamps.add(new ArrayList<Long>());
-				right_clicks.add(new ArrayList<Integer>());
-				wrong_clicks.add(new ArrayList<Integer>());
+				right_clicks_history.add(new ArrayList<Integer>());
+				wrong_clicks_history.add(new ArrayList<Integer>());
 			}
 		}
 
+		String cksm = String.format("%x", checksum);
 		String hs_sz = prefs_highscores.getString(String.format("%x_HS", checksum), "");
 		Log.v("initMidiFile", "Historical Scores: " + hs_sz);
-		TommyConfig.populateHSTSArraysFromJSONString(highscores, timestamps, right_clicks, wrong_clicks, hs_sz);
-		num_times_played = prefs_playcount.getInt(String.format("%x", checksum), 0);
+		TommyConfig.populateHSTSArraysFromJSONString(highscores, timestamps, right_clicks_history, wrong_clicks_history, hs_sz);
+		num_times_played = prefs_quizcount.getInt(String.format("%x", checksum), 0);
+
+		int NT = sheet.getActualNumberOfTracks();
+		{
+			String mssz = prefs_quizstats.getString(cksm+"_mastery_states", "");
+			for(int i=0; i<NT; i++) {
+				measure_mastery_states.add(new ArrayList<Integer>());
+				masteries.add(new ArrayList<TommyMastery>());
+			}
+			TommyConfig.populateMasteryStateArrayFromJSONString(NT, num_measures, measure_mastery_states, mssz);
+			for(int i=0; i<NT; i++) {
+				for(int j=0; j<num_measures; j++) {
+					masteries.get(i).add(new TommyMastery(measure_mastery_states.get(i).get(j)));
+				}
+			}
+		}
+		
+		sheet.getVisibleActualTrackIndices(actual_track_idx);
+		
 		bitmap_helper = new BitmapHelper(this, sheet, 1.0f, 1.0f);
 		is_inited = true;
 	}
@@ -1389,22 +1790,33 @@ public class TommyView2 extends View implements Runnable {
 			
 			if(width > height) {
 				AREA1_HGT = (int)(height * 0.33f);
+				curr_layout_id = 1;
 				layout1();
 			} else {
 				AREA1_HGT = (int)(height * 0.25f);
+				curr_layout_id = 2;
 				layout2();
 			}
 		}
 	}
 	
-	public TommyView2(Context context, Bundle icicle, byte[] _data, String _title) {
+	public TommyView2(Context context, Bundle icicle, byte[] _data, String _title, String _midi_uri_string, MidiOptions _options) {
 		super(context);
-		midi_data = _data; midi_title = _title;
+		difficulty_1 = context.getResources().getString(R.string.difficulty_1);
+		difficulty_2 = context.getResources().getString(R.string.difficulty_2);
+		difficulty_3 = context.getResources().getString(R.string.difficulty_3);
+		difficulty_4 = context.getResources().getString(R.string.difficulty_4);
+		please_make_a_choice = context.getResources().getString(R.string.please_make_a_choice);
+		well_done = context.getResources().getString(R.string.well_done);
+		midi_data = _data; midi_title = _title; options = _options; midi_uri_string = _midi_uri_string;
 		density = MidiSheetMusicActivity.density;
 		ctx = context;
 		prefs_highscores = ctx.getSharedPreferences("highscores", Context.MODE_PRIVATE);
 		prefs_lastplayed = ctx.getSharedPreferences("lastplayed", Context.MODE_PRIVATE);
-		prefs_playcount  = ctx.getSharedPreferences("playcounts", Context.MODE_PRIVATE);
+		prefs_quizcount  = ctx.getSharedPreferences("quizcounts", Context.MODE_PRIVATE);
+		prefs_quizstats  = ctx.getSharedPreferences("quizstats",  Context.MODE_PRIVATE);
+		prefs_finegrained =ctx.getSharedPreferences("finegrained",Context.MODE_PRIVATE);
+		
 		thread = new Thread(this);
 		paint = new Paint();
 		bmp_paint = new Paint();
@@ -1417,6 +1829,24 @@ public class TommyView2 extends View implements Runnable {
 		if(!is_inited) {
 			initMidiFile();
 		}
+		String cksm = String.format("%x", checksum);
+		int NT = sheet.getActualNumberOfTracks();
+		{
+			String quiz_stat_sz = prefs_quizstats.getString(cksm, "");
+			Log.v("TommyIntroView", "quiz_stat_sz="+quiz_stat_sz+", NT="+NT);
+			TommyConfig.populateQuizCoarseStatisticsFromJSONString(NT, num_measures, right_clicks_measures, wrong_clicks_measures,
+				delays_measures, quiz_stat_sz);
+			sheet.getVisibleActualTrackIndices(actual_track_idx);
+		}
+
+		// Fine-grained history
+		// If this takes a couple of seconds, shall we move it to another updater_thread?
+		{
+			String fghist = prefs_finegrained.getString(cksm, "");
+			boolean isok = TommyConfig.populateQuizFineStaticsFromJSONString(NT, num_measures, okclicks_history_f, millis_history_f, fghist);
+			Log.v("TommyView2", "Load fine grained history = " + isok);
+		}
+		
 		last_heap_memory_alloc = Debug.getNativeHeapAllocatedSize();
 	}
 
@@ -1425,29 +1855,29 @@ public class TommyView2 extends View implements Runnable {
 		while(!is_freed) {
 			if(is_running) {
 				long last_millis = 0;
-				try {
-					while(true) {
+				while(true) {
+					try {
 						long curr_millis = System.currentTimeMillis();
 						long delta = curr_millis - last_millis;
+						/*// This doesn't make sense anymore since we moved from SurfaceView to View
+						  // With a View, drawing is done by the main updater_thread, so the time measurement
+						  // doesn't capture time spent in rendering anymore!
 						if(delta < FRAME_DELAY) {
 							Thread.sleep(FRAME_DELAY - delta);
 						}
+						*/
 						if(frame_count > 1 && game_state == GameState.PLAYING) {
-							elapsed_millis += (curr_millis - last_millis);
+							elapsed_millis += delta;
 						}
 						last_millis = curr_millis;
-						update();
-						if(DEBUG) {
-							if(frame_count % 100 == 0) {
-								last_heap_memory_alloc = Debug.getNativeHeapAllocatedSize();
-							}
-						}
-						if(need_redraw) 
+						Thread.sleep(1);
+						update(); // Sync-Locked.
+						if(need_redraw) {
+							for(SelectionTile st : tiles) st.prepareToDraw();
 							postInvalidate();
+						}
 						if(!is_running) break; // fixed on 20140306
-					}
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+					} catch (Exception e) {}
 				}
 			} else {
 				try{
@@ -1461,18 +1891,19 @@ public class TommyView2 extends View implements Runnable {
 	
 	private void do_draw(Canvas c) {
 		frame_count ++;
-		c.drawColor(Color.GRAY);
+		c.drawColor(TommyConfig.getCurrentStyle().background_color);
 		int w = this.getWidth();
 
 		if(recycle_area != null) recycle_area.draw(c);
-		
+		if(separator    != null) separator.draw(c);
+		if(left_button  != null) left_button.draw(c);
+		if(right_button != null) right_button.draw(c);
 		for(SelectionTile st : tiles) st.draw(c);
 		
 		synchronized(tiles_in_animation) {
 			for(TileInAnimation tia : tiles_in_animation) tia.draw(c);
 		}
 		
-		if(DEBUG)
 		{
 			paint.setColor(Color.BLUE);
 			paint.setTextAlign(Align.CENTER);
@@ -1492,43 +1923,59 @@ public class TommyView2 extends View implements Runnable {
 	
 	@Override
 	protected void onDraw(Canvas c) {
-		do_draw(c);
+		synchronized(this) { // To prevent canvas tearing.
+			do_draw(c);
+		}
+		last_redraw_millis = System.currentTimeMillis();
 	}
 	
 	private void update() {
-		need_redraw = false;
-		long millis = System.currentTimeMillis();
-		
-		if(recycle_area != null) {
-			recycle_area.update(millis);
-			need_redraw |= recycle_area.need_redraw;
-		}
-		
-		Iterator<TileInAnimation> itr0 = tiles_in_animation.iterator();
-		synchronized(tiles_in_animation) {
-			for(; itr0.hasNext(); ) {
-				need_redraw = true;
-				TileInAnimation tia = itr0.next();
-				tia.update(millis);
-				if(tia.is_ended == true) {
-					itr0.remove();
+		synchronized(this) {
+			need_redraw = false;
+			long millis = System.currentTimeMillis();
+			
+			if(recycle_area != null) {
+				recycle_area.update(millis);
+				need_redraw |= recycle_area.need_redraw;
+			}
+			
+			Iterator<TileInAnimation> itr0 = tiles_in_animation.iterator();
+			synchronized(tiles_in_animation) {
+				for(; itr0.hasNext(); ) {
+					need_redraw = true;
+					TileInAnimation tia = itr0.next();
+					tia.update(millis);
+					if(tia.is_ended == true) {
+						itr0.remove();
+					}
 				}
 			}
-		}
-		
-		for(SelectionTile st : tiles) {
-			st.update(millis);
-			need_redraw |= st.need_redraw;
-		}
-		
-		for(InvisibleDPad ivd : invdpads) {
-			if(ivd != null) 
-			ivd.update(millis); 
-		}
-		
-		int bytes_consumed = bitmap_helper.getBytesConsumed();
-		if(bytes_consumed > BITMAP_MEM_BUDGET) {
-			bitmap_helper.clearOutOfSightBitmaps();
+			
+			for(SelectionTile st : tiles) {
+				st.update(millis);
+				need_redraw |= st.need_redraw;
+			}
+			
+			for(InvisibleDPad ivd : invdpads) {
+				if(ivd != null) 
+				ivd.update(millis); 
+			}
+			
+			if(separator.isTouched()) {
+				AREA1_HGT = pinch_begin_AREA1_HGT + separator.touchy - separator.touchy_begin;
+				if(curr_layout_id == 1) adjustSizeLayout1();
+				else if(curr_layout_id == 2) adjustSizeLayout2();
+				separator.clearDeltaXY();				
+			}
+			
+			need_redraw |= separator.need_redraw;
+			need_redraw |= left_button.need_redraw;
+			need_redraw |= right_button.need_redraw;
+			
+			int bytes_consumed = bitmap_helper.getBytesConsumed();
+			if(bytes_consumed > BITMAP_MEM_BUDGET) {
+				bitmap_helper.clearOutOfSightBitmaps();
+			}
 		}
 	}
 	
@@ -1539,6 +1986,43 @@ public class TommyView2 extends View implements Runnable {
 	private void myTouchDown(int id, int x, int y) {
 		touches[id].x = x; touches[id].y = y;
 
+		// Step 3: Panning and zooming
+		{
+			for(int i=0; i<invdpads.length; i++) {
+				if(invdpads[i].touchDown(id, x, y)) break;
+			}
+			
+			// Pinch
+			/*
+			if(touches_on_bk == 2) {
+				int ptouchid0 = -999, ptouchid1 = -999;
+				for(int i=0; i<invdpads.length; i++) {
+					if(invdpads[i].isTouched()) {
+						ptouchid0 = i; break;
+					}
+				}
+				for(int i=ptouchid0+1; i<invdpads.length; i++) {
+					if(invdpads[i].isTouched()) {
+						ptouchid1 = i; break;
+					}
+				}
+				int x0 = invdpads[ptouchid0].touchx, x1 = invdpads[ptouchid1].touchx,
+					y0 = invdpads[ptouchid0].touchy, y1 = invdpads[ptouchid1].touchy;
+				if(recycle_area.intersect(x0, y0) && recycle_area.intersect(x1, y1)) {
+					pinch_begin_x_avg = (x0 + x1)/2;
+					pinch_begin_y_avg = (y0 + y1)/2;
+					pinch_touchid0 = ptouchid0;
+					pinch_touchid1 = ptouchid1;
+					pinch_begin_AREA1_HGT = AREA1_HGT;
+					is_resizing_recycling_area = true;
+				}
+			}
+			*/
+		}
+		
+		if(separator.touchDown(id, x, y)) return;
+		if(left_button.touchDown(id, x, y)) return;
+		if(right_button.touchDown(id, x, y)) return;
 		if(recycle_area.touchDown(id, x, y)) return;
 		
 		// Step 2: Process music puzzle pieces
@@ -1548,12 +2032,6 @@ public class TommyView2 extends View implements Runnable {
 			}
 		}
 		
-		// Step 3: Panning and zooming
-		{
-			for(int i=0; i<invdpads.length; i++) {
-				if(invdpads[i].touchDown(id, x, y)) return;
-			}
-		}
 		
 	}
 	
@@ -1561,22 +2039,40 @@ public class TommyView2 extends View implements Runnable {
 		touches[id].x = -1; touches[id].y = -1;
 		for(InvisibleDPad idp : invdpads) {
 			idp.touchUp(id);
-		}
-		if(touches_on_bk == 0) { // start inertial
-			recycle_area.last_inertia_movt_millis = System.currentTimeMillis();
-			recycle_area.is_inertia = true;
+			/*
+			if(id == pinch_touchid1 || id == pinch_touchid0) {
+				pinch_touchid1 = pinch_touchid0 = -999;
+				is_resizing_recycling_area = false;
+			}
+			*/
 		}
 		for(SelectionTile st  : tiles) st.touchUp(id);
 		recycle_area.touchUp(id);
+		separator.touchUp(id);
+		left_button.touchUp(id);
+		right_button.touchUp(id);
 	}
 	
 	private void myTouchMove(int id, int x, int y) {
 		touches[id].x = x; touches[id].y = y;
 		for(InvisibleDPad idp : invdpads) {
 			idp.touchMove(id, x, y);
+			
 		}
+		
+		/*
+		if(isPinchingRecycleArea()) {
+			int y0 = invdpads[pinch_touchid0].touchy, y1 = invdpads[pinch_touchid1].touchy;
+			int yavg = (y0 + y1)/2;
+			AREA1_HGT = pinch_begin_AREA1_HGT + (yavg - pinch_begin_y_avg);
+			if(curr_layout_id == 1) adjustSizeLayout1();
+			else if(curr_layout_id == 2) adjustSizeLayout2();
+		}
+		*/
+		
 		for(SelectionTile st : tiles) { st.touchMove(id, x, y); }
 		recycle_area.touchMove(id, x, y);
+		separator.touchMove(id, x, y);
 	}
 	
 	// Touch events
@@ -1634,7 +2130,7 @@ public class TommyView2 extends View implements Runnable {
 	    bitmap_helper.free();
 	    sheet.free();
 	    sheet = null;
-	    MidiSheetMusicActivity.sheet0 = null;
+	    TommyView2.sheet1 = null;
 	    is_freed = true;
 	}
 	@Override 

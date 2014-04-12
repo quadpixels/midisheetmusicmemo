@@ -52,6 +52,10 @@ public class FileUri implements Comparator<FileUri> {
     public String toString() {
         return displayName;
     }
+    
+    public String toStringFull() {
+    	return uri.getLastPathSegment() + displayName;
+    }
 
     /** Return true if this is a directory */
     public boolean isDirectory() {

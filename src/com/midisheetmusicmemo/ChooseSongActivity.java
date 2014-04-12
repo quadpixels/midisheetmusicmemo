@@ -40,6 +40,7 @@ public class ChooseSongActivity extends TabActivity {
     @Override
     public void onCreate(Bundle state) {
         globalActivity = this;
+        TommyConfig.init(this);
         super.onCreate(state);
 
        
@@ -82,6 +83,7 @@ public class ChooseSongActivity extends TabActivity {
         }
         intent.putExtra(SheetMusicActivity.MidiTitleID, file.toString());
         intent.putExtra(SheetMusicActivity.MidiDataID,  file.getData(this));
+        intent.putExtra(TommyConfig.FILE_URI_ID,        file.toStringFull());
         startActivity(intent);
     }
 

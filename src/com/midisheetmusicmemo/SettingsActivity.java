@@ -75,6 +75,12 @@ public class SettingsActivity extends PreferenceActivity
     private ListPreference loopStart;
     private ListPreference loopEnd;
 
+    // 2014-03-15
+    // If calling from TommyActivity, disable the following options
+    // * Scroll Vertically. Reason: In TommyIntroView it's always rendered vertically.
+    // * Transpose.         Reason: I'm not using this option.
+    // * Color.             Reason: Color scheme overrides this guy.
+    private boolean is_from_tommyactivity = false;
 
     /** Create the Settings activity. Retrieve the initial option values
      *  (MidiOptions) from the Intent.
@@ -88,6 +94,12 @@ public class SettingsActivity extends PreferenceActivity
         setTitle("MidiSheetMusic: Settings");
         options = (MidiOptions) this.getIntent().getSerializableExtra(settingsID);
         defaultOptions = (MidiOptions) this.getIntent().getSerializableExtra(defaultSettingsID);
+        {
+        	int x = this.getIntent().getIntExtra(TommyConfig.IS_FROM_TOMMY_ACTIVITY, -1);
+        	if(x == 1) {
+        		is_from_tommyactivity = true;
+        	}
+        }
         createView();
     }
 
@@ -103,7 +115,8 @@ public class SettingsActivity extends PreferenceActivity
         sheetTitle.setTitle(R.string.sheet_prefs_title);
         root.addPreference(sheetTitle);
 
-        createScrollPrefs(root);
+        if(!is_from_tommyactivity)
+        	createScrollPrefs(root);
         createShowPianoPrefs(root);
         createShowLyricsPrefs(root);
         if (options.tracks.length != 2) {
@@ -394,7 +407,8 @@ public class SettingsActivity extends PreferenceActivity
             ListPreference entry = selectInstruments[i];
             options.instruments[i] = entry.findIndexOfValue(entry.getValue());
         }
-        options.scrollVert = scrollVertically.isChecked();
+        if(scrollVertically != null) // If I disable it, scrollVertically would be NULL
+        	options.scrollVert = scrollVertically.isChecked();
         options.showPiano = showPiano.isChecked();
         options.showLyrics = showLyrics.isChecked();
         if (twoStaffs != null)

@@ -20,6 +20,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
+import android.widget.LinearLayout.LayoutParams;
 import android.content.*;
 import android.content.res.*;
 import android.graphics.*;
@@ -29,18 +30,46 @@ import android.graphics.*;
  * It simply displays the splash screen, and a button to choose a song.
  */
 public class MidiSheetMusicActivity extends Activity {
-	static boolean DEBUG = false, USE_ORIGINAL_MSM = false;
+	static boolean DEBUG = true, USE_ORIGINAL_MSM = false, USE_FAST_RENDERING_METHOD = true;
 	static boolean IS_TOMMY = false;
 	static SheetMusic sheet0;
 	static float density;
 	LinearLayout linear_layout;
 	public static MidiSheetMusicActivity activity;
-	private CheckBox cb;
+	private CheckBox cb, cb2, cb3;
+    LinearLayout outer_container, inner_container, pad_left, pad_right, pad_top, pad_bottom;
+	
+	void setPadding() {
+		Display disp = this.getWindowManager().getDefaultDisplay();  
+		int w = disp.getWidth(), h = disp.getHeight();
+		Log.v("MidiSheetMusicActivity", "setPadding, w="+w+", h="+h);
+     	int pad_h = 0, pad_v = 0;
+     	if(w > h) {
+     		pad_v = 0; pad_h = (w-h)/2;
+     	} else {
+     		pad_h = 0; pad_v = (h-w)/2;
+     	}
+     	outer_container.setBackgroundColor(0xFF666666);
+     	LinearLayout.LayoutParams lp;
+     	lp = (LayoutParams) pad_left.getLayoutParams();
+     	lp.width = pad_h;
+     	pad_left.setLayoutParams(lp);
+     	lp = (LayoutParams) pad_right.getLayoutParams();
+     	lp.width = pad_h;
+     	pad_right.setLayoutParams(lp);
+     	lp = (LayoutParams) pad_top.getLayoutParams();
+     	lp.height = pad_v;
+     	pad_top.setLayoutParams(lp);
+     	lp = (LayoutParams) pad_bottom.getLayoutParams();
+     	lp.height = pad_v;
+     	pad_bottom.setLayoutParams(lp);
+	}
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
-
+    	Log.v("MidiSheetMusicActivity", "onCreate");
         super.onCreate(savedInstanceState);
+        MidiFile.loadStrings(this); // Beginning to support multiple languages
 
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);
@@ -49,6 +78,18 @@ public class MidiSheetMusicActivity extends Activity {
         
         loadImages();
         setContentView(R.layout.main);
+        
+        {
+	        outer_container = (LinearLayout)findViewById(R.id.outer_container);
+	        inner_container = (LinearLayout)findViewById(R.id.inner_container);
+	        pad_left = (LinearLayout)findViewById(R.id.padding_left);
+	        pad_right = (LinearLayout)findViewById(R.id.padding_right);
+	        pad_top = (LinearLayout)findViewById(R.id.padding_top);
+	        pad_bottom = (LinearLayout)findViewById(R.id.padding_bottom);
+	        setPadding();
+	       
+        }
+        
         Button button = (Button) findViewById(R.id.choose_song);
         button.setOnClickListener(
                 new View.OnClickListener() {
@@ -67,11 +108,38 @@ public class MidiSheetMusicActivity extends Activity {
 			}
         });
 
+        cb2 = (CheckBox)findViewById(R.id.checkBox2);
+        cb2.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				USE_FAST_RENDERING_METHOD = isChecked;
+			}
+        });
+        
+        cb3 = (CheckBox)findViewById(R.id.checkBox3);
+        cb3.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView,
+					boolean isChecked) {
+				DEBUG = isChecked;
+			}
+        });
+        
         Button btn_hlp = (Button)findViewById(R.id.button_help);
         btn_hlp.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				showHelp();
+			}
+		});
+        
+        Button btn1 = (Button)findViewById(R.id.button1);
+        btn1.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(MidiSheetMusicActivity.this, TestActivity.class);
+				startActivity(intent);
 			}
 		});
     }
@@ -87,12 +155,6 @@ public class MidiSheetMusicActivity extends Activity {
         ClefSymbol.LoadImages(this);
         TimeSigSymbol.LoadImages(this);
         MidiPlayer.LoadImages(this);
-    }
-
-    /** Always use landscape mode for this activity. */
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
     }
 
     private void showHelp() {

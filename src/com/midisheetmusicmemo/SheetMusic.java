@@ -77,6 +77,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 
     private String   filename;        /** The midi filename */
     private int      numtracks;       /** The number of tracks */
+    private int      numtracks_raw;   // Number of tracks in raw MIDI file.
     private float    zoom;            /** The zoom level to draw at (1.0 == 100%) */
     private boolean  scrollVert;      /** Whether to scroll vertically or horizontally */
     private int      showNoteLetters; /** Display the note letters */
@@ -118,14 +119,35 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     private int num_notes = 0;
     public int getNumNotes() { return num_notes; }
     public String getFilename() { return filename; }
-    public int getNumMeasures() { return measureHashes.get(0).size(); }
+    public int getNumMeasures() {
+    	if(measureHashes.size() > 0)
+    		return measureHashes.get(0).size();
+    	else return 0;
+    }
     public int getNumStaffs()   { return measureHashes.size(); }
     public ArrayList<Integer> getMeasureHeights() { return measureHeights; }
     public ArrayList<Integer> getMeasureWidths() { return measureWidths; }
     private Bitmap scratch;
     private int scratch_width = -999, scratch_height = -999;
+    public int render_width = 800;
     public boolean is_first_measure_out_of_boundingbox = true;
-    ArrayList<ArrayList<MusicSymbol>> allsymbols;
+    ArrayList<ArrayList<MusicSymbol>> allsymbols, allsymbols_bk;
+    ArrayList<ArrayList<LyricSymbol>> lyrics;
+    MidiOptions options;
+    @SuppressWarnings("unchecked")
+	private void resumeBackupAllSymbols() {
+    	for(ArrayList<MusicSymbol> x : allsymbols) {
+    		for(MusicSymbol s : x) {
+    			s.setWidth(s.getMinWidth());
+    			if(s instanceof ChordSymbol) {
+    				ChordSymbol cs = (ChordSymbol)s;
+    				cs.clearBeams();
+    			}
+    		}
+    	}
+    	SymbolWidths widths = new SymbolWidths(allsymbols, lyrics);
+    	AlignSymbols(allsymbols, widths, options);
+    }
     TimeSignature time_signature;
     // Added 20140307
     public boolean is_tommy_linebreak = false;
@@ -149,7 +171,29 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     }
     public int getMeasureBeginPulse(int midx) {
     	return staffs.get(0).getMeasureBeginPulse(midx);
-    	
+    }
+    // Added 20140315
+    public void getVisibleActualTrackIndices(ArrayList<Integer> actual_tidx) {
+    	actual_tidx.clear();
+    	if(numtracks_raw == 2) {
+    		actual_tidx.add(0);
+    		actual_tidx.add(1);
+    	} else {
+	    	if(options.twoStaffs) {
+	    		actual_tidx.add(0);
+	    		actual_tidx.add(1);
+	    	} else {
+	    		for(int i=0; i<options.tracks.length; i++) {
+	    			if(options.tracks[i]==true) {
+	    				actual_tidx.add(2 + i);
+	    			}
+	    		}
+	    	}
+    	}
+    }
+    public int getActualNumberOfTracks() {
+    	if(numtracks_raw== 2) return 2;
+    	else return 2+numtracks_raw;
     }
 
     /** Create a new SheetMusic View.
@@ -163,6 +207,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
      * - Partition the music notes into horizontal staffs
      */
     public void init(MidiFile file, MidiOptions options) {
+    	numtracks_raw = file.getTracks().size();
         if (options == null) {
             options = new MidiOptions(file);
         }
@@ -210,7 +255,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
             allsymbols.add(CreateSymbols(chords, clefs, time, lastStart));
         }
 
-        ArrayList<ArrayList<LyricSymbol>> lyrics = null;
+        lyrics = null;
         if (options.showLyrics) {
             lyrics = GetLyrics(tracks);
         }
@@ -240,6 +285,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
         zoom = 1.0f;
 
         scrollAnimation = new ScrollAnimation(this, scrollVert);
+    	this.options = options;
     }
 
     /** Calculate the size of the sheet music width and height
@@ -1296,44 +1342,50 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     	canvas.drawRect(xlim.x, ymin, xlim.y, ymax, paint);
     }
     public Bitmap RenderTile(int measure_idx, int staff_idx, float zoom_x, float zoom_y) {
-    	Staff staff = staffs.get(staff_idx);
-    	int H = staff.getHeight();
-    	Canvas c = new Canvas(scratch);
-    	c.drawColor(TommyConfig.BACKGROUND_COLOR);
-    	boolean is_clef = (measure_idx == 0) ? true : false;
-    	
-    	float pad = 0.0f;
-    	if(measurePads.size() > 0) pad = measurePads.get(measure_idx);
-    	float overflow_zoomx = 1.0f;
-    	if(measureOverflowZooms.size() > 0) overflow_zoomx = measureOverflowZooms.get(measure_idx);
-    	
-    	Vec2 xlim = staff.DrawMeasure(c, measure_idx, paint, is_clef, pad);
-    	int W = xlim.y - xlim.x;
-    	
-    	if(zoom_x > 1) zoom_x = 1;
-    	if(zoom_y > 1) zoom_y = 1;
-    	int W_alloc = (int)(W*zoom_x*overflow_zoomx);
-    	int H_alloc = (int)(H*zoom_y);
-    	
-    	Bitmap ret = Bitmap.createBitmap((int)W_alloc, (int)H_alloc, Config.RGB_565);
-    	Canvas c1 = new Canvas(ret);
-    	Rect src = new Rect(0, 0, W, H), dst = new Rect(0, 0, W_alloc, H_alloc);
-    	paint.setFilterBitmap(true);
-    	c1.drawBitmap(scratch, src, dst, paint);
-    	c1 = null;
-    	c = null;
-    	return ret;
+    	synchronized(scratch) {
+	    	Staff staff = staffs.get(staff_idx);
+	    	int H = staff.getHeight();
+	    	Canvas c = new Canvas(scratch);
+	    	c.drawColor(TommyConfig.BACKGROUND_COLOR);
+	    	boolean is_clef = (measure_idx == 0) ? true : false;
+	    	
+	    	float pad = 0.0f;
+	    	if(measurePads.size() > 0) pad = measurePads.get(measure_idx);
+	    	float overflow_zoomx = 1.0f;
+	    	if(measureOverflowZooms.size() > 0) overflow_zoomx = measureOverflowZooms.get(measure_idx);
+	    	
+	    	Vec2 xlim = staff.DrawMeasure(c, measure_idx, paint, is_clef, pad);
+	    	int W = xlim.y - xlim.x;
+	    	
+	    	if(zoom_x > 1) zoom_x = 1;
+	    	if(zoom_y > 1) zoom_y = 1;
+	    	int W_alloc = (int)(W*zoom_x*overflow_zoomx);
+	    	int H_alloc = (int)(H*zoom_y);
+	    	
+	    	Bitmap ret = Bitmap.createBitmap((int)W_alloc, (int)H_alloc, Config.RGB_565);
+	    	Canvas c1 = new Canvas(ret);
+	    	Rect src = new Rect(0, 0, W, H), dst = new Rect(0, 0, W_alloc, H_alloc);
+	    	paint.setFilterBitmap(true);
+	    	c1.drawBitmap(scratch, src, dst, paint);
+	    	c1 = null;
+	    	c = null;
+	    	return ret;
+    	}
     }
 
     public void ComputeMeasureHashesNoLineBreakNoRender() {
+    	resumeBackupAllSymbols();
     	int num_measures = staffs.get(0).getNumMeasures();
     	if(num_measures == 0) {
     		Log.v("SheetMusic", "Rendering all measures, but we have 0 measures.");
     	}
     	num_notes = 0;
     	measureHashes.clear();
-    	measureHeights.clear();
+    	measurePads.clear();
+    	measureOverflowZooms.clear();
     	measureWidths.clear();
+    	measureHeights.clear();
+    	scratch_height = scratch_width = 0;
     	for(Staff f : staffs) {
     		ArrayList<Integer> staffHashes = new ArrayList<Integer>();
     		for(int i=0; i<num_measures; i++) {
@@ -1364,7 +1416,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 				if(f==staffs.get(0)) {
 					int w = xlim.y - xlim.x;
 					if(scratch_width < w) scratch_width = w;
-					measureWidths.add(xlim.y - xlim.x);
+					measureWidths.add(w);
 				}
     		}
     		measureHashes.add(staffHashes);
@@ -1377,7 +1429,9 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     }
     
     public void ComputeMeasureHashesNoRender(int line_width) {
-    	int num_measures = staffs.get(0).getNumMeasures();
+    	resumeBackupAllSymbols();
+    	int num_measures = 0;
+    	if(staffs.size() > 0) num_measures = staffs.get(0).getNumMeasures();
     	if(num_measures == 0) {
     		Log.v("SheetMusic", "Rendering all measures, but we have 0 measures.");
     	}
@@ -1385,6 +1439,11 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     	num_notes = 0;
     	Vec2 xlim = new Vec2();
     	measureHashes.clear();
+    	measurePads.clear();
+    	measureOverflowZooms.clear();
+    	measureWidths.clear();
+    	measureHeights.clear();
+    	scratch_height = scratch_width = 0;
     	for(Staff f : staffs) {
     		ArrayList<Integer> staffHashes = new ArrayList<Integer>();
     		int x = 0;
@@ -1496,15 +1555,10 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 	    	if(scratch_height < f.getHeight()) scratch_height = f.getHeight();
     	}
 
-    	if(scratch == null) 
-    		scratch = Bitmap.createBitmap(scratch_width, scratch_height, Config.RGB_565);
     	Log.v("SheetMusic new", "Creating all beamed chords" + time_signature);
     	CreateAllBeamedChords(this.allsymbols, this.time_signature);
-    	for(ArrayList<MusicSymbol> al : allsymbols) {
-    		al.clear();
-    	}
-    	allsymbols.clear();
-    	allsymbols = null;
+    	if(scratch == null && scratch_width > 0 && scratch_height > 0) 
+    		scratch = Bitmap.createBitmap(line_width, scratch_height, Config.RGB_565);
     }
     
     
@@ -1587,7 +1641,8 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     	measureHashes.clear();
     	measureHeights.clear();
     	measureWidths.clear();
-    	scratch.recycle();
+    	if(scratch != null)
+    		scratch.recycle();
     	scratch = null;
     	System.gc();
     	System.gc();

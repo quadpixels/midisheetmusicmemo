@@ -15,6 +15,8 @@ package com.midisheetmusicmemo;
 
 import java.io.*;
 import java.util.*;
+
+import android.content.Context;
 import android.util.*;
 
 /** @class Pair - A pair of ints */
@@ -366,6 +368,10 @@ public class MidiFile {
         "Percussion"
     };
     /* End Instruments */
+    
+    public static void loadStrings(Context ctx) {
+    	Instruments = ctx.getResources().getStringArray(R.array.midi_instrument_names);
+    }
 
     /** Return a String representation of a Midi event */
     private String EventName(int ev) {
