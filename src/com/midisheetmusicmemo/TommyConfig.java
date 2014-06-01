@@ -80,6 +80,16 @@ public class TommyConfig {
 			styles[3].gauge_color_undesirable = 0xFFFF0000;
 			styles[3].gauge_color_desirable = 0xFF00FF00;
 			
+			styles[4] = new MyStyle();
+			styles[4].tile_bk_lower = styles[4].tile_bk_upper = (NinePatchDrawable)(ctx.getResources().getDrawable(R.drawable.ninepatch2_upper_coffee));
+			styles[4].background_separator = (NinePatchDrawable)(ctx.getResources().getDrawable(R.drawable.background_separator_coffee));
+			styles[4].btn_text_color = 0xFFFFFFFF;
+			styles[4].text_color = 0xFF663366;
+			styles[4].highlight_color = 0xFFEEFFFF;
+			styles[4].background_color = 0xFF844531;
+			styles[4].gauge_color_neutral = 0xFF333333;
+			styles[4].gauge_color_undesirable = 0xFFFF0000;
+			styles[4].gauge_color_desirable = 0xFF00FF00;
 		}
 		if(bmp_settings == null) {
 			bmp_settings = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.settings);
@@ -152,12 +162,14 @@ public class TommyConfig {
 		for(int i=0; i<M; i++) {
 			mstates.get(i).clear();
 		}
+		int x = 0;
 		try {
 			for(int i=0; i<M; i++) {
 				JSONArray ja = new JSONArray(sep[i]);
 				int j = 0;
 				while(j < ja.length()) {
 					mstates.get(i).add(ja.getInt(j)); j++;
+					x++;
 				}
 			}
 		} catch(JSONException e) {
@@ -169,6 +181,7 @@ public class TommyConfig {
 			}
 			is_except = true;
 		}
+		Log.v("populateMasteryStateArray", "elts="+x);
 		return is_except;
 	}
 	

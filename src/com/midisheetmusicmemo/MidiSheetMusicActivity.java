@@ -22,6 +22,7 @@ import android.view.*;
 import android.widget.*;
 import android.widget.LinearLayout.LayoutParams;
 import android.content.*;
+import android.content.SharedPreferences.Editor;
 import android.content.res.*;
 import android.graphics.*;
 
@@ -30,7 +31,7 @@ import android.graphics.*;
  * It simply displays the splash screen, and a button to choose a song.
  */
 public class MidiSheetMusicActivity extends Activity {
-	static boolean DEBUG = true, USE_ORIGINAL_MSM = false, USE_FAST_RENDERING_METHOD = true;
+	static boolean DEBUG = true, USE_ORIGINAL_MSM = false, USE_FAST_RENDERING_METHOD = true, SHOW_README=true;
 	static boolean IS_TOMMY = false;
 	static SheetMusic sheet0;
 	static float density;
@@ -38,6 +39,7 @@ public class MidiSheetMusicActivity extends Activity {
 	public static MidiSheetMusicActivity activity;
 	private CheckBox cb, cb2, cb3;
     LinearLayout outer_container, inner_container, pad_left, pad_right, pad_top, pad_bottom;
+    SharedPreferences prefs_readme;
 	
 	void setPadding() {
 		Display disp = this.getWindowManager().getDefaultDisplay();  
@@ -78,6 +80,7 @@ public class MidiSheetMusicActivity extends Activity {
         
         loadImages();
         setContentView(R.layout.main);
+        prefs_readme = getApplicationContext().getSharedPreferences("readme", Context.MODE_PRIVATE);
         
         {
 	        outer_container = (LinearLayout)findViewById(R.id.outer_container);
@@ -140,6 +143,17 @@ public class MidiSheetMusicActivity extends Activity {
 			public void onClick(View v) {
 				Intent intent = new Intent(MidiSheetMusicActivity.this, TestActivity.class);
 				startActivity(intent);
+			}
+		});
+        
+        Button btn_reset_readme = (Button)findViewById(R.id.reset_readme);
+        btn_reset_readme.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Editor edt = prefs_readme.edit();
+				edt.putBoolean("readme1_shown", false);
+				edt.putBoolean("readme2_shown", false);
+				edt.commit();
 			}
 		});
     }

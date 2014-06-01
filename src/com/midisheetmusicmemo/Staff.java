@@ -17,6 +17,7 @@ import java.util.*;
 import com.midisheetmusicmemo.SheetMusic.Vec2;
 
 import android.graphics.*;
+import android.util.Log;
 
 
 /* @class Staff
@@ -54,23 +55,24 @@ public class Staff {
 
     // TOMMY
     private ArrayList<Integer> barSymbolIdxes; // Idx of bar symbols
+    public HashMap<Integer, Float> symbolX = new HashMap<Integer, Float>();        // X coordinates, updated at each DrawMeasure.
     public int getNumMeasures() {
     	return barSymbolIdxes.size();
     }
     public int getMeasureIdxFromPulse(int pulse) {
-    	if(pulse < symbols.get(0).getStartTime()) return -1;
+    	if(pulse < getSymbols().get(0).getStartTime()) return -1;
     	for(int i=0; i<barSymbolIdxes.size(); i++) {
-    		int lower_bound = symbols.get(barSymbolIdxes.get(i)).getStartTime();
+    		int lower_bound = getSymbols().get(barSymbolIdxes.get(i)).getStartTime();
     		int upper_bound = lower_bound;
     		if(i < barSymbolIdxes.size()-1) {
-    			upper_bound = symbols.get(barSymbolIdxes.get(i+1)).getStartTime();
-    		} else upper_bound = symbols.get(symbols.size()-1).getStartTime();
+    			upper_bound = getSymbols().get(barSymbolIdxes.get(i+1)).getStartTime();
+    		} else upper_bound = getSymbols().get(getSymbols().size()-1).getStartTime();
     		if(lower_bound <= pulse && upper_bound > pulse) return i;
     	}
     	return barSymbolIdxes.size() - 1;
     }
     public int getMeasureBeginPulse(int midx) {
-    	return symbols.get(barSymbolIdxes.get(midx)).getStartTime();
+    	return getSymbols().get(barSymbolIdxes.get(midx)).getStartTime();
     }
     
     /** Create a new staff with the given list of music symbols,
@@ -97,7 +99,7 @@ public class Staff {
 
         clefsym = new ClefSymbol(clef, 0, false);
         keys = key.GetSymbols(clef);
-        this.symbols = symbols;
+        this.setSymbols(symbols);
         CalculateWidth(options.scrollVert);
         CalculateHeight();
         CalculateStartEndTime();
@@ -148,7 +150,7 @@ public class Staff {
         int above = 0;
         int below = 0;
 
-        for (MusicSymbol s : symbols) {
+        for (MusicSymbol s : getSymbols()) {
             above = Math.max(above, s.getAboveStaff());
             below = Math.max(below, s.getBelowStaff());
         }
@@ -177,7 +179,7 @@ public class Staff {
             return;
         }
         width = keysigWidth;
-        for (MusicSymbol s : symbols) {
+        for (MusicSymbol s : getSymbols()) {
             width += s.getWidth();
         }
     }
@@ -185,11 +187,11 @@ public class Staff {
     /** Calculate the start and end time of this staff. */
     private void CalculateStartEndTime() {
         starttime = endtime = 0;
-        if (symbols.size() == 0) {
+        if (getSymbols().size() == 0) {
             return;
         }
-        starttime = symbols.get(0).getStartTime();
-        for (MusicSymbol m : symbols) {
+        starttime = getSymbols().get(0).getStartTime();
+        for (MusicSymbol m : getSymbols()) {
             if (endtime < m.getStartTime()) {
                 endtime = m.getStartTime();
             }
@@ -212,13 +214,13 @@ public class Staff {
         int totalsymbols = 0;
         int i = 0;
 
-        while (i < symbols.size()) {
-            int start = symbols.get(i).getStartTime();
+        while (i < getSymbols().size()) {
+            int start = getSymbols().get(i).getStartTime();
             totalsymbols++;
-            totalwidth += symbols.get(i).getWidth();
+            totalwidth += getSymbols().get(i).getWidth();
             i++;
-            while (i < symbols.size() && symbols.get(i).getStartTime() == start) {
-                totalwidth += symbols.get(i).getWidth();
+            while (i < getSymbols().size() && getSymbols().get(i).getStartTime() == start) {
+                totalwidth += getSymbols().get(i).getWidth();
                 i++;
             }
         }
@@ -228,12 +230,12 @@ public class Staff {
             extrawidth = SheetMusic.NoteHeight*2;
         }
         i = 0;
-        while (i < symbols.size()) {
-            int start = symbols.get(i).getStartTime();
-            int newwidth = symbols.get(i).getWidth() + extrawidth;
-            symbols.get(i).setWidth(newwidth);
+        while (i < getSymbols().size()) {
+            int start = getSymbols().get(i).getStartTime();
+            int newwidth = getSymbols().get(i).getWidth() + extrawidth;
+            getSymbols().get(i).setWidth(newwidth);
             i++;
-            while (i < symbols.size() && symbols.get(i).getStartTime() == start) {
+            while (i < getSymbols().size() && getSymbols().get(i).getStartTime() == start) {
                 i++;
             }
         }
@@ -258,14 +260,14 @@ public class Staff {
                 break;
             }
             /* Get the x-position of this lyric */
-            while (symbolindex < symbols.size() &&
-                   symbols.get(symbolindex).getStartTime() < lyric.getStartTime()) {
-                xpos += symbols.get(symbolindex).getWidth();
+            while (symbolindex < getSymbols().size() &&
+                   getSymbols().get(symbolindex).getStartTime() < lyric.getStartTime()) {
+                xpos += getSymbols().get(symbolindex).getWidth();
                 symbolindex++;
             }
             lyric.setX(xpos);
-            if (symbolindex < symbols.size() &&
-                (symbols.get(symbolindex) instanceof BarSymbol)) {
+            if (symbolindex < getSymbols().size() &&
+                (getSymbols().get(symbolindex) instanceof BarSymbol)) {
                 lyric.setX(lyric.getX() + SheetMusic.NoteWidth);
             }
             lyrics.add(lyric);
@@ -296,7 +298,7 @@ public class Staff {
         int xpos = keysigWidth;
         int ypos = ytop - SheetMusic.NoteHeight * 3;
 
-        for (MusicSymbol s : symbols) {
+        for (MusicSymbol s : getSymbols()) {
             if (s instanceof BarSymbol) {
                 int measure = 1 + s.getStartTime() / measureLength;
                 canvas.drawText("" + measure,
@@ -312,7 +314,7 @@ public class Staff {
     	if(barSymbolIdxes == null) barSymbolIdxes = new ArrayList<Integer>();
     	barSymbolIdxes.clear();
     	int idx = 0;
-    	for(MusicSymbol s : symbols) {
+    	for(MusicSymbol s : getSymbols()) {
     		if(s instanceof BarSymbol) {
     			barSymbolIdxes.add(idx);
     		}
@@ -395,7 +397,7 @@ public class Staff {
          *
          * For fast performance, only draw symbols that are in the clip area.
          */
-        for (MusicSymbol s : symbols) {
+        for (MusicSymbol s : getSymbols()) {
             if ((xpos <= clip.left + clip.width() + 50) && (xpos + s.getWidth() + 50 >= clip.left)) {
                 canvas.translate(xpos, 0);
                 s.Draw(canvas, paint, ytop);
@@ -416,24 +418,24 @@ public class Staff {
 
     }
 
-    public ArrayList<MusicSymbol> getNotesInMeasure(int measureIdx) {
+    public ArrayList<Integer> getNotesInMeasure(int measureIdx) {
     	if(measureIdx < 0 || measureIdx >= barSymbolIdxes.size()) return null;
-    	ArrayList<MusicSymbol> ret = new ArrayList<MusicSymbol>();
+    	ArrayList<Integer> ret = new ArrayList<Integer>();
     	int idx_start = barSymbolIdxes.get(measureIdx), idx = idx_start;
     	boolean is_done = false;
     	while(true) {
-    		if(idx >= symbols.size()) break;
+    		if(idx >= getSymbols().size()) break;
     		if(is_done) break;
-    		MusicSymbol sym = symbols.get(idx);
+    		MusicSymbol sym = getSymbols().get(idx);
     		{
     			if(idx != idx_start && sym instanceof BarSymbol) { is_done = true;}
     			if(sym instanceof BarSymbol) {
     				if(idx == idx_start || measureIdx == barSymbolIdxes.size()-1) {
     					// Do not show BarSymbol except when this is the final measure.
-    	    			ret.add(sym);
+    	    			ret.add(idx);
     				}
     			} else {
-    				ret.add(sym);
+    				ret.add(idx);
     			}
     			idx++;
     		}
@@ -444,70 +446,33 @@ public class Staff {
     public void PadMeasure(int measure_idx, float total_x_padding) {
     	int idx_start = barSymbolIdxes.get(measure_idx);
     	int idx_end = (measure_idx < getNumMeasures()-1) ? barSymbolIdxes.get(measure_idx+1) :
-    		symbols.size();
+    		getSymbols().size();
     	int total_pad = (int)(total_x_padding);
     	int num_syms_pad = 0;
     	
     	int i = idx_start;
     	// How many symbols need be padded?
     	while(i<idx_end) {
-    		MusicSymbol sym = symbols.get(i);
+    		MusicSymbol sym = getSymbols().get(i);
     		int start = sym.getStartTime();
     		i++;
     		num_syms_pad ++;
-    		while(i<idx_end && symbols.get(i).getStartTime() == start) i++;
+    		while(i<idx_end && getSymbols().get(i).getStartTime() == start) i++;
     	}
     	
     	int each_pad = total_pad / num_syms_pad;
     	i = idx_start;
     	while(i<idx_end) {
-    		MusicSymbol sym = symbols.get(i);
+    		MusicSymbol sym = getSymbols().get(i);
     		int start = sym.getStartTime();
     		int this_pad = (i==idx_end-1) ? total_pad : each_pad;
     		total_pad -= this_pad;
     		sym.setWidth(sym.getWidth() + this_pad);
     		i++;
-    		while(i < idx_end && symbols.get(i).getStartTime() == start) {
+    		while(i < idx_end && getSymbols().get(i).getStartTime() == start) {
     			i++; 
     		}
     	}
-    	
-    	/*
-    	 * private void FullJustify() {
-        if (width != SheetMusic.PageWidth)
-            return;
-
-        int totalwidth = keysigWidth;
-        int totalsymbols = 0;
-        int i = 0;
-
-        while (i < symbols.size()) {
-            int start = symbols.get(i).getStartTime();
-            totalsymbols++;
-            totalwidth += symbols.get(i).getWidth();
-            i++;
-            while (i < symbols.size() && symbols.get(i).getStartTime() == start) {
-                totalwidth += symbols.get(i).getWidth();
-                i++;
-            }
-        }
-
-        int extrawidth = (SheetMusic.PageWidth - totalwidth - 1) / totalsymbols;
-        if (extrawidth > SheetMusic.NoteHeight*2) {
-            extrawidth = SheetMusic.NoteHeight*2;
-        }
-        i = 0;
-        while (i < symbols.size()) {
-            int start = symbols.get(i).getStartTime();
-            int newwidth = symbols.get(i).getWidth() + extrawidth;
-            symbols.get(i).setWidth(newwidth);
-            i++;
-            while (i < symbols.size() && symbols.get(i).getStartTime() == start) {
-                i++;
-            }
-        }
-    }
-    	 */
     }
     
     // if canvas is null then just measure width
@@ -546,19 +511,21 @@ public class Staff {
     	        }
     		}
 			
-			ArrayList<MusicSymbol> syms = getNotesInMeasure(measureIdx);
+			ArrayList<Integer> symidxs = getNotesInMeasure(measureIdx);
 			
-			if(syms.size() > 0) {
-				each_x_padding = total_x_padding / (1.0f*syms.size());
+			if(symidxs.size() > 0) {
+				each_x_padding = total_x_padding / (1.0f*symidxs.size());
 			} else {
 				xpos += total_x_padding;
 			}
-			for(MusicSymbol sym : syms) {
+			for(Integer idx : symidxs) {
+				MusicSymbol sym = getSymbols().get(idx);
 				if(canvas != null) {
 					canvas.translate(xpos, 0);
 					sym.Draw(canvas, paint, ytop);
 					canvas.translate(-xpos, 0);
 				}
+				symbolX.put(idx, xpos);
 				xpos += sym.getWidth();
 				xpos = xpos + each_x_padding;
 			}
@@ -574,6 +541,71 @@ public class Staff {
     	return ret;
     }
 
+    // TOMMY: The Index of the notes in the give time.
+    // Tommy (On 2014-05-03)
+    // The BarSymbol may be causing some glitches?
+    public int shade_measure_idx = 0;
+    public float shade_measure_x_begin   = 0.0f, shade_measure_x_end = 0.0f;
+    public int shade_note_idx = 0;
+    public void updateShadedNoteX(int curr_measure, int currentPulseTime, int prevPulseTime) {
+    	if(curr_measure < 0) {
+    		return;
+    	}
+    	synchronized(barSymbolIdxes) {
+	    	int idx = -999;
+	    	for(int i=curr_measure; i<barSymbolIdxes.size(); i++) {
+	    		idx = i;
+	    		BarSymbol bs = (BarSymbol)(getSymbols().get(barSymbolIdxes.get(idx)));
+	    		if(idx != barSymbolIdxes.size() - 1) {
+	    			BarSymbol bs_next = (BarSymbol)(getSymbols().get(barSymbolIdxes.get(idx+1)));
+		    		if(bs.getStartTime() <= currentPulseTime && 
+		    				bs_next.getStartTime() >= currentPulseTime) {
+		    			shade_measure_idx = idx;
+		    			break;
+		    		}
+	    		} else {
+	    			if(bs.getStartTime() <= currentPulseTime) {
+	    				shade_measure_idx = idx;
+	    				break;
+	    			}
+	    		}
+	    	}
+	    	
+	    	// Search in that measure.
+	    	int sidx_begin = barSymbolIdxes.get(idx), sidx_end;
+	    	if(idx == barSymbolIdxes.size() - 1) { sidx_end = getSymbols().size(); }
+	    	else { sidx_end = barSymbolIdxes.get(idx + 1); }
+	    	for(int idx1=sidx_begin; idx1<sidx_end; idx1++) {
+	    		MusicSymbol ms = getSymbols().get(idx1);
+	    		MusicSymbol ms_next = null;
+	    		if(idx1 < symbols.size() - 1) {
+	    			ms_next = symbols.get(idx1 + 1);
+	    		}
+	    		
+				int st = ms.getStartTime();
+
+				boolean ok = false;
+	    		if(ms_next != null) {
+		    		if(st <= currentPulseTime && ms_next.getStartTime() >= currentPulseTime) {
+		    			ok = true;
+			    	}
+	    		} else {
+	    			if(st <= currentPulseTime) {
+	    				ok = true;
+	    			}
+	    		}
+	    		
+	    		if(ok) {
+	    			if(symbolX.containsKey(idx1)) {
+		    			shade_note_idx = idx1;
+	    				shade_measure_x_begin = symbolX.get(idx1);
+	    				shade_measure_x_end   = shade_measure_x_begin + ms.getWidth();
+	    				break;
+		    		}
+	    		}
+	    	}
+    	}
+    }
 
     /** Shade all the chords played in the given time.
      *  Un-shade any chords shaded in the previous pulse time.
@@ -599,8 +631,8 @@ public class Staff {
          * Unshade symbols where start <= prevPulseTime < end
          * Shade symbols where start <= currentPulseTime < end
          */ 
-        for (int i = 0; i < symbols.size(); i++) {
-            curr = symbols.get(i);
+        for (int i = 0; i < getSymbols().size(); i++) {
+            curr = getSymbols().get(i);
             if (curr instanceof BarSymbol) {
                 xpos += curr.getWidth();
                 continue;
@@ -608,11 +640,11 @@ public class Staff {
 
             int start = curr.getStartTime();
             int end = 0;
-            if (i+2 < symbols.size() && symbols.get(i+1) instanceof BarSymbol) {
-                end = symbols.get(i+2).getStartTime();
+            if (i+2 < getSymbols().size() && getSymbols().get(i+1) instanceof BarSymbol) {
+                end = getSymbols().get(i+2).getStartTime();
             }
-            else if (i+1 < symbols.size()) {
-                end = symbols.get(i+1).getStartTime();
+            else if (i+1 < getSymbols().size()) {
+                end = getSymbols().get(i+1).getStartTime();
             }
             else {
                 end = endtime;
@@ -714,7 +746,7 @@ public class Staff {
 
         int xpos = keysigWidth;
         int pulseTime = starttime;
-        for (MusicSymbol sym : symbols) {
+        for (MusicSymbol sym : getSymbols()) {
             pulseTime = sym.getStartTime();
             if (point.x <= xpos + sym.getWidth()) {
                 return pulseTime;
@@ -736,7 +768,7 @@ public class Staff {
         for (MusicSymbol s : keys) {
             result += "    " + s.toString() + "\n";
         }
-        for (MusicSymbol m : symbols) {
+        for (MusicSymbol m : getSymbols()) {
             result += "    " + m.toString() + "\n";
         }
         result += "End Staff\n";
@@ -745,10 +777,18 @@ public class Staff {
 
 
     public void free() {
-    	if(symbols != null) symbols.clear();
-    	if(barSymbolIdxes != null) barSymbolIdxes.clear();
-    	if(lyrics != null) lyrics.clear();
+    	synchronized(barSymbolIdxes) {
+	    	if(getSymbols() != null) getSymbols().clear();
+	    	if(barSymbolIdxes != null) barSymbolIdxes.clear();
+	    	if(lyrics != null) lyrics.clear();
+    	}
     }
+	public ArrayList<MusicSymbol> getSymbols() {
+		return symbols;
+	}
+	public void setSymbols(ArrayList<MusicSymbol> symbols) {
+		this.symbols = symbols;
+	}
     
 }
 

@@ -166,8 +166,16 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     
     // Added 20140311
     private int curr_playing_measure_idx = -1;
+    private float curr_playing_measure_shade_x_begin = 0.0f,
+    		      curr_playing_measure_shade_x_end   = 0.0f;
     public int getCurrentPlayingMeasure() {
     	return curr_playing_measure_idx;
+    }
+    public float getCurrentPlayingMeasureShadeXBegin() {
+    	return curr_playing_measure_shade_x_begin;
+    }
+    public float getCurrentPlayingMeasureShadeXEnd() {
+    	return curr_playing_measure_shade_x_end;
     }
     public int getMeasureBeginPulse(int midx) {
     	return staffs.get(0).getMeasureBeginPulse(midx);
@@ -1343,6 +1351,11 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     }
     public Bitmap RenderTile(int measure_idx, int staff_idx, float zoom_x, float zoom_y) {
     	synchronized(scratch) {
+    		try{
+    			if(scratch.isRecycled()) {
+    				Thread.sleep(100);
+    			}
+    		} catch (Exception x) {}
 	    	Staff staff = staffs.get(staff_idx);
 	    	int H = staff.getHeight();
 	    	Canvas c = new Canvas(scratch);
@@ -1395,10 +1408,11 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     			// Compute Hash
 				{
 		    		int syms_hash = 0x00000000;
-	    			ArrayList<MusicSymbol> syms_f = f.getNotesInMeasure(i);
+	    			ArrayList<Integer> syms_f_idxs = f.getNotesInMeasure(i);
 	    			int idx = 1;
 	    			String longhash = "";
-	    			for(MusicSymbol s : syms_f) {
+	    			for(Integer idx1 : syms_f_idxs) {
+	    				MusicSymbol s = f.getSymbols().get(idx1);
 	    				syms_hash ^= s.getMyHash();
 	    				longhash = longhash + "," + s.getMyHash();
 	    				syms_hash = syms_hash * idx;
@@ -1497,10 +1511,11 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 		    			// Compute Hash
 	    				{
 	    		    		int syms_hash = 0x00000000;
-			    			ArrayList<MusicSymbol> syms_f = f.getNotesInMeasure(j);
+			    			ArrayList<Integer> syms_f_idxs = f.getNotesInMeasure(j);
 			    			int idx = 1;
 			    			String longhash = "";
-			    			for(MusicSymbol s : syms_f) {
+			    			for(Integer idx1 : syms_f_idxs) {
+			    				MusicSymbol s = f.getSymbols().get(idx1);
 			    				syms_hash ^= s.getMyHash();
 			    				longhash = longhash + "," + s.getMyHash();
 			    				syms_hash = syms_hash * idx;
@@ -1546,6 +1561,8 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 			    		if(f == staffs.get(0)) {
 			    			measureWidths.add(W);
 			    		}
+			    		
+			    		
 	    			}
 	    			line_begin_idx = line_end_idx;
     			}
@@ -1557,6 +1574,12 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 
     	Log.v("SheetMusic new", "Creating all beamed chords" + time_signature);
     	CreateAllBeamedChords(this.allsymbols, this.time_signature);
+    	
+    	// When the user wants to resize
+    	if(scratch != null && scratch.isRecycled()==false) {
+    		scratch.recycle(); scratch = null;
+    		scratch = Bitmap.createBitmap(line_width, scratch_height, Config.RGB_565);
+    	}
     	if(scratch == null && scratch_width > 0 && scratch_height > 0) 
     		scratch = Bitmap.createBitmap(line_width, scratch_height, Config.RGB_565);
     }
@@ -1587,10 +1610,12 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     			// Compute Hash
 				{
 		    		int syms_hash = 0x00000000;
-	    			ArrayList<MusicSymbol> syms_f = f.getNotesInMeasure(i);
+	    			ArrayList<Integer> syms_f_idxs = f.getNotesInMeasure(i);
 	    			int idx = 1;
 	    			String longhash = "";
-	    			for(MusicSymbol s : syms_f) {
+	    			for(Integer idx1 : syms_f_idxs) {
+	    				MusicSymbol s = f.getSymbols().get(idx1);
+//	    			for(MusicSymbol s : syms_f) {
 	    				syms_hash ^= s.getMyHash();
 	    				longhash = longhash + "," + s.getMyHash();
 	    				syms_hash = syms_hash * idx;
@@ -1707,10 +1732,12 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 		    			// Compute Hash
 	    				{
 	    		    		int syms_hash = 0x00000000;
-			    			ArrayList<MusicSymbol> syms_f = f.getNotesInMeasure(j);
+			    			ArrayList<Integer> syms_f_idxs = f.getNotesInMeasure(j);
 			    			int idx = 1;
 			    			String longhash = "";
-			    			for(MusicSymbol s : syms_f) {
+			    			for(Integer idx1 : syms_f_idxs) {
+			    				MusicSymbol s = f.getSymbols().get(idx1);
+//			    			for(MusicSymbol s : syms_f) {
 			    				syms_hash ^= s.getMyHash();
 			    				longhash = longhash + "," + s.getMyHash();
 			    				syms_hash = syms_hash * idx;
@@ -1781,8 +1808,31 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     	if(staffs!=null) {
     		Staff f = staffs.get(0);
 	        { 
-	        	curr_playing_measure_idx = f.getMeasureIdxFromPulse(currentPulseTime); 
+	        	curr_playing_measure_idx = f.getMeasureIdxFromPulse(currentPulseTime);
 	        }
+
+	        
+	        float x_shade1 = 1e20f, x_shade1_end = 1e20f; // Shade X in the current measure.
+	        int shade_measure_idx_min = 2147483647;
+
+	        for(Staff staff : staffs) {
+	            staff.updateShadedNoteX(curr_playing_measure_idx, currentPulseTime, prevPulseTime); // TOMMY
+	        	if(staff.shade_measure_idx < shade_measure_idx_min) {
+	        		shade_measure_idx_min = staff.shade_measure_idx;
+        			x_shade1 = staff.shade_measure_x_begin;
+        			x_shade1_end = staff.shade_measure_x_end;
+	        	} else if(staff.shade_measure_idx == shade_measure_idx_min) {
+	        		if(staff.shade_measure_x_begin < x_shade1) {
+	        			x_shade1 = staff.shade_measure_x_begin;
+	        			x_shade1_end = staff.shade_measure_x_end;
+	        		}
+	        	}
+	        }
+
+	        curr_playing_measure_idx = shade_measure_idx_min;
+	        curr_playing_measure_shade_x_begin = x_shade1;
+	        curr_playing_measure_shade_x_end = x_shade1_end;
+	        Log.v("x", String.format("Curr Playing Shade Statistics (%d,%g)", shade_measure_idx_min, x_shade1));
     	}
         
         if (!surfaceReady || staffs == null) {
@@ -1812,6 +1862,8 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
         paint.setAntiAlias(true);
         bufferCanvas.scale(zoom, zoom);
         int ypos = 0;
+        
+        
         for (Staff staff : staffs) {
             bufferCanvas.translate(0, ypos);
             x_shade = staff.ShadeNotes(bufferCanvas, paint, shade1, 
@@ -1821,9 +1873,11 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
             if (currentPulseTime >= staff.getEndTime()) {
                 y_shade += staff.getHeight();
             }
+
         }
         bufferCanvas.scale(1.0f/zoom, 1.0f/zoom);
         bufferCanvas.translate(bufferX, bufferY);
+        
 
         /* We have the (x,y) position of the shaded notes.
          * Calculate the new scroll position.

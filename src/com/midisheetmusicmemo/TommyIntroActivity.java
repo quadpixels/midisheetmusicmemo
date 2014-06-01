@@ -2,6 +2,8 @@ package com.midisheetmusicmemo;
 
 import java.util.zip.CRC32;
 
+import com.midisheetmusicmemo.TommyPopupView.HelpInfos;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -9,17 +11,20 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Debug;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,7 +32,10 @@ import android.widget.Toast;
 // 2014-03-14 Currently rotating screen stops music (the user has to restart it) 
 
 public class TommyIntroActivity extends Activity {
+	public static TommyPopupView popupview; 
 	TommyIntroView view;
+	Bundle bundle;
+	RelativeLayout relative_layout;
 	byte[] midi_data;
 	String midi_title, midi_uri_string;
 	Context ctx;
@@ -36,7 +44,7 @@ public class TommyIntroActivity extends Activity {
 	MidiFile midi_file;
 	long midiCRC;
 	SheetMusic sheet0;
-	SharedPreferences prefs_colorscheme;
+	SharedPreferences prefs_colorscheme, prefs_readme;
 	int playcount, quizcount;
 	String error_no_tracks_selected;
 	boolean is_error_toast_shown = false;
@@ -47,11 +55,13 @@ public class TommyIntroActivity extends Activity {
 	private static final int SETTINGS_REQUEST_CODE = 1;
 	int last_seekbar_progress = 99;
 	
-	public void onCreate(Bundle bundle) {
-		super.onCreate(bundle);
-		
+	public void onCreate(Bundle _bundle) {
+		super.onCreate(_bundle);
+		bundle = _bundle;
 		ctx = getApplicationContext();
+		
 		prefs_colorscheme  = ctx.getSharedPreferences("colorscheme", Context.MODE_PRIVATE);
+		prefs_readme       = ctx.getSharedPreferences("readme", Context.MODE_PRIVATE);
 
 		midi_data = this.getIntent().getByteArrayExtra(SheetMusicActivity.MidiDataID);
 		midi_title= this.getIntent().getStringExtra(SheetMusicActivity.MidiTitleID);
@@ -79,19 +89,7 @@ public class TommyIntroActivity extends Activity {
 		color_scheme_idx = prefs_colorscheme.getInt(midi_uri_string, 0);
 		TommyConfig.setStyleIdx(color_scheme_idx);
 		error_no_tracks_selected = this.getResources().getString(R.string.error_no_tracks_selected);
-		
-		
-		view = new TommyIntroView(this, bundle, midi_data, midi_title, midi_uri_string, options, this);
-		setContentView(view);
-		
-		
-		player = new MidiPlayer(this);
-		player.SetMidiFile(midi_file, options, view.sheet);
-		
-		/*
-		player.MoveToMeasureBegin(0);
-		player.Play();
-		is_playing = true;*/
+		createView();
 	}
 	
 	public boolean isMidiPlayerPlaying() {
@@ -99,8 +97,33 @@ public class TommyIntroActivity extends Activity {
 		else return false;
 	}
 	
+	private void createView() {
+		boolean readme_shown = prefs_readme.getBoolean("readme1_shown", false);
+		
+		if(relative_layout == null) {
+			relative_layout = new RelativeLayout(ctx);
+		}
+		if(view == null) {
+			view = new TommyIntroView(this, bundle, midi_data, midi_title, midi_uri_string, options, this);
+		}
+		if(relative_layout.getChildCount() == 0) {
+			relative_layout.addView(view);
+		}
+		setContentView(relative_layout);
+
+		// Create TommyIntroView first, then TommyIntroPopupView.
+		if(!readme_shown) {
+			popupview = new TommyPopupView(ctx, relative_layout, this.view, HelpInfos.INFO_FIRST_MEASURE);
+			relative_layout.addView(popupview);
+			popupview.view = this.view;
+		}
+		player = new MidiPlayer(this);
+		player.SetMidiFile(midi_file, options, view.sheet);
+	}
+	
 	public void stopMidiPlayer() {
 		player.Stop();
+        this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 	}
 	
 	public void startMidiPlayer() {
@@ -121,6 +144,7 @@ public class TommyIntroActivity extends Activity {
 	        intent.putExtra(SheetMusicActivity.MidiTitleID, midi_title.toString());
 	        intent.putExtra(TommyConfig.FILE_URI_ID, midi_uri_string);
 	        startActivity(intent);
+	        player.Stop();
 	        finish();
 		} else {
 			if(!is_error_toast_shown) {
@@ -134,6 +158,7 @@ public class TommyIntroActivity extends Activity {
 		super.onDestroy();
 		if(isFinishing()) {
 			player.Stop();
+			player = null;
 			if(view!=null) {
 				view.free();
 				view = null;
@@ -254,7 +279,7 @@ public class TommyIntroActivity extends Activity {
 				SharedPreferences.Editor editor = prefs_colorscheme.edit();
 				editor.putInt(midi_uri_string, color_scheme_idx);
 				editor.commit();
-				view.need_redraw = true;
+				view.onColorSchemeChanged();
 			}
 		});
 		bldr.show();
