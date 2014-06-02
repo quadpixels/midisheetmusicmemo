@@ -22,6 +22,7 @@ public class TommyConfig {
 	public static final String TOMMY_PREF_NAME = "SheetMusicFlashcardPrefs";
 	public static final String IS_FROM_TOMMY_ACTIVITY = "IsFromTommyActivity";
 	public static final String FILE_URI_ID = "MidiFileURI";
+	public static final String FILE_CHECKSUM_ID = "MidiFileChecksum";
 	private static final int NUM_STYLES = 5;
 	public static MyStyle styles[] = new MyStyle[NUM_STYLES];
 	private static int style_idx = 0; 

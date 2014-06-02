@@ -42,7 +42,7 @@ public class TommyPopupView extends View {
 	
 	boolean is_transparent = false;
 	
-	int width, height;
+	int width = 320, height = 480;
 	Paint paint;
 	StaticLayout txtlayout0 = null;
 	String msg11, msg12, msg21, msg31, msg32, msg22, msg23;

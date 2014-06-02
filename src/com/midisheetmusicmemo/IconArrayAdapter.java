@@ -37,6 +37,7 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
     private static Bitmap directoryIcon;  /* The directory icon */
     private SharedPreferences prefs_play_count, prefs_quizcount;
     private SharedPreferences prefs_last_played, prefs_colorscheme;
+    private String sz_num_play_quiz, sz_last_played;
 
     /** Load the NotePair image into memory. */
     public void LoadImages(Context context) {
@@ -56,6 +57,8 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
         prefs_last_played= context.getSharedPreferences("lastplayed", Context.MODE_PRIVATE);
         prefs_colorscheme = context.getSharedPreferences("colorscheme", Context.MODE_PRIVATE);
         prefs_quizcount  = context.getSharedPreferences("quizcounts", Context.MODE_PRIVATE);
+        sz_num_play_quiz = context.getResources().getString(R.string.num_play_and_quiz);
+        sz_last_played   = context.getResources().getString(R.string.last_played_date);
     }
 
     /** Create a view for displaying a song in the ListView.
@@ -85,14 +88,17 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
 
              int play_count = prefs_play_count.getInt(file.toStringFull(), 0);
              int quiz_count = prefs_quizcount.getInt(file.toStringFull(), 0);
-             String sz_played = play_count + " plays, " + quiz_count + " quizzees";
+             String sz_played = "";
+             if(play_count != 0 || quiz_count != 0) {
+            	 sz_played = "\n" + String.format(sz_num_play_quiz, play_count, quiz_count);
+             } else { }
              String sz_lastplay;
-             long date_millis = prefs_last_played.getLong(file.toString(), -1);
+             long date_millis = prefs_last_played.getLong(file.toStringFull(), -1); // 2014-06-02 toString --> toStringFull
              if(date_millis == -1) {
             	 sz_lastplay = "";
              } else {
             	 Date d = new Date(date_millis);
-            	 sz_lastplay = "\nLast played " + d.toLocaleString();
+            	 sz_lastplay = String.format(sz_last_played, d.toLocaleString());
              }
              tommy_text.setText(sz_played + sz_lastplay);
              

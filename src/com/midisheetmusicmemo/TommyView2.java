@@ -443,7 +443,7 @@ public class TommyView2 extends View implements Runnable {
 			SharedPreferences.Editor editor_lastplay  = prefs_lastplayed.edit();
 			SharedPreferences.Editor editor_finegrained=prefs_finegrained.edit();
 			
-			String key1 = String.format("%x", checksum), key2 = midi_title;
+			String key1 = String.format("%x", checksum), key2 = midi_uri_string; // 2014-06-20 midi_title -> midi_uri_string
 			
 			// Update # plays of the current file.
 			num_times_played ++;
@@ -506,10 +506,10 @@ public class TommyView2 extends View implements Runnable {
 			String cksm = String.format("%x", checksum);
 			{
 				for(int i=0; i<NT; i++) {
-					for(int j=1; j<num_measures; j++) { // 2014-05-31: Ignore the first measure 
+					for(int j=0; j<num_measures; j++) { // 2014-05-31: Ignore the first measure 
 						int st = masteries.get(i).get(j).getMasteryState();
-						mastery_histogram_after[st] ++;
 						measure_mastery_states.get(i).set(j, st);
+						if(j>0) mastery_histogram_after[st] ++;
 					}
 				}
 				String sz = TommyConfig.MasteryStateArrayToJSONString(measure_mastery_states);
@@ -1064,15 +1064,16 @@ public class TommyView2 extends View implements Runnable {
 				paint.setStrokeWidth(density);
 				paint.setStyle(Style.FILL);
 				paint.setColor(0xFFFFFFFF);
-				paint.setTextSize((txt_H - 2) * density);
+				paint.setTextSize(12.0f*density);
 				paint.setTextAlign(Align.LEFT);
-				c.drawText(title, x, y + ty - (paint.ascent() + paint.descent())/2, paint);
+				c.drawText(title, x, y + ty - (paint.ascent() - paint.descent())/2, paint);
 				
 				paint.setTextAlign(Align.CENTER);
+				paint.setTextSize(strans_vis_h * 0.15f);
 				for(int i=0; i<txt_xy.length; i++) {
 					c.drawText("" + histogram[i], 
 						x + pad + txt_xy[i][0], 
-						y + pad + txt_xy[i][1] + ty, paint);
+						y + pad + txt_xy[i][1] + ty - (paint.ascent() + paint.descent())/2, paint);
 				}
 			}
 		}
@@ -1962,10 +1963,10 @@ public class TommyView2 extends View implements Runnable {
 			}
 			TommyConfig.populateMasteryStateArrayFromJSONString(NT, num_measures, measure_mastery_states, mssz);
 			for(int i=0; i<NT; i++) {
-				for(int j=1; j<num_measures; j++) { // Ignore the first measure.
+				for(int j=0; j<num_measures; j++) { // Ignore the first measure.
 					int x = measure_mastery_states.get(i).get(j);
 					masteries.get(i).add(new TommyMastery(x));
-					mastery_histogram_before[x] ++;
+					if(j>0) mastery_histogram_before[x] ++;
 				}
 			}
 		}

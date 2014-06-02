@@ -67,8 +67,8 @@ public class TommyView2Activity extends Activity {
 			popupview = new TommyPopupView(ctx, relative_layout, tommyview, HelpInfos.INFO_RECYCLE_ZONE);
 			popupview.which_help = HelpInfos.INFO_RECYCLE_ZONE;
 			relative_layout.addView(popupview);
-			setContentView(relative_layout);
 		}
+		setContentView(relative_layout);
 		
         ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE);
 		Toast.makeText(this, "Heap="+activityManager.getMemoryClass(), Toast.LENGTH_SHORT).show();

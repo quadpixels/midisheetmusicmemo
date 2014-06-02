@@ -31,7 +31,7 @@ import android.graphics.*;
  * It simply displays the splash screen, and a button to choose a song.
  */
 public class MidiSheetMusicActivity extends Activity {
-	static boolean DEBUG = true, USE_ORIGINAL_MSM = false, USE_FAST_RENDERING_METHOD = true, SHOW_README=true;
+	static boolean DEBUG = false, USE_ORIGINAL_MSM = false, USE_FAST_RENDERING_METHOD = true, SHOW_README=true;
 	static boolean IS_TOMMY = false;
 	static SheetMusic sheet0;
 	static float density;
@@ -40,6 +40,9 @@ public class MidiSheetMusicActivity extends Activity {
 	private CheckBox cb, cb2, cb3;
     LinearLayout outer_container, inner_container, pad_left, pad_right, pad_top, pad_bottom;
     SharedPreferences prefs_readme;
+    
+    long last_click_millis;
+    int num_click;
 	
 	void setPadding() {
 		Display disp = this.getWindowManager().getDefaultDisplay();  
@@ -70,6 +73,7 @@ public class MidiSheetMusicActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
     	Log.v("MidiSheetMusicActivity", "onCreate");
+    	MidiSheetMusicActivity.activity = this;
         super.onCreate(savedInstanceState);
         MidiFile.loadStrings(this); // Beginning to support multiple languages
 
@@ -90,7 +94,28 @@ public class MidiSheetMusicActivity extends Activity {
 	        pad_top = (LinearLayout)findViewById(R.id.padding_top);
 	        pad_bottom = (LinearLayout)findViewById(R.id.padding_bottom);
 	        setPadding();
-	       
+        }
+        
+        {
+        	outer_container.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View arg0) {
+					if(num_click == -999) return;
+					long millis = System.currentTimeMillis();
+					if(millis > last_click_millis + 400) {
+						num_click = 0;
+					}
+					num_click += 1;
+					if(num_click >= 7) {
+						Toast.makeText(getApplicationContext(), "Developer options enabled!", Toast.LENGTH_SHORT).show();
+						num_click = -999;
+						cb.setVisibility(View.VISIBLE);
+						cb2.setVisibility(View.VISIBLE);
+						cb3.setVisibility(View.VISIBLE);
+					}
+					last_click_millis = millis;
+				}
+			});
         }
         
         Button button = (Button) findViewById(R.id.choose_song);
@@ -137,7 +162,7 @@ public class MidiSheetMusicActivity extends Activity {
 			}
 		});
         
-        Button btn1 = (Button)findViewById(R.id.button1);
+        Button btn1 = (Button)findViewById(R.id.button_reset_readme);
         btn1.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -150,14 +175,18 @@ public class MidiSheetMusicActivity extends Activity {
         btn_reset_readme.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Editor edt = prefs_readme.edit();
-				edt.putBoolean("readme1_shown", false);
-				edt.putBoolean("readme2_shown", false);
-				edt.commit();
+				resetQuickReadme();
 			}
 		});
     }
 
+    public static void resetQuickReadme() {
+		Editor edt = activity.prefs_readme.edit();
+		edt.putBoolean("readme1_shown", false);
+		edt.putBoolean("readme2_shown", false);
+		edt.commit();
+    }
+    
     /** Start the ChooseSongActivity when the "Choose Song" button is clicked */
     private void chooseSong() {
         Intent intent = new Intent(this, ChooseSongActivity.class);

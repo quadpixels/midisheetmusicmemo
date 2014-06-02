@@ -180,6 +180,8 @@ public class TommyIntroActivity extends Activity {
         intent.putExtra(SettingsActivity.settingsID, options);
         intent.putExtra(SettingsActivity.defaultSettingsID, defaultOptions);
         intent.putExtra(TommyConfig.IS_FROM_TOMMY_ACTIVITY, 1);
+        intent.putExtra(TommyConfig.FILE_URI_ID, midi_uri_string);
+        intent.putExtra(TommyConfig.FILE_CHECKSUM_ID, midiCRC);
         startActivityForResult(intent, SETTINGS_REQUEST_CODE);
     }
 

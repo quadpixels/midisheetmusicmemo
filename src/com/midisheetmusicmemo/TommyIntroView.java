@@ -1255,23 +1255,25 @@ public class TommyIntroView extends View implements Runnable {
 				float mastery = 0.0f;
 				int total_count = 0;
 				
+				paint.setTextSize(strans_zoom * 15.0f);
 				for(int i=0; i<strans_txt_xy.length; i++) {
 					// 1. Draw
 					int count = measure_mastery_histogram[i];
 					total_count += count;
 					c.drawText("" + count, this.x + this.pad_left + strans_txt_xy[i][0], 
-							y0 + strans_txt_xy[i][1], paint);
+							y0 + strans_txt_xy[i][1] - (paint.ascent()+paint.descent())/2, paint);
 					mastery += TommyMastery.MASTERY_STATE_SCORES[i] * count;
 				}
 				final float txt_h = 12.0f * density;
 				final float full_mastery = 1.0f * total_count;
 				paint.setTextAlign(Align.LEFT);
 				
+				paint.setTextSize(12.0f*density);
 				String txt = String.format("XP:%d/%d(%.2f%%)", (int)mastery, (int)full_mastery, 
 						(mastery/full_mastery*100));
 				float txt_w = paint.measureText(txt);
 				c.drawText(txt, x + pad_left, 
-						y0 + pad_top + txt_h/2 - (paint.ascent()+paint.descent())/2,
+						y0 + pad_top + txt_h/2 - (paint.ascent()-paint.descent())/2,
 						paint);
 				
 				int x_begin = (int)(txt_w + x + pad_left);
