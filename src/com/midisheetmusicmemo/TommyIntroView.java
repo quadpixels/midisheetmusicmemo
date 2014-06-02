@@ -31,6 +31,9 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Bundle;
+import android.text.StaticLayout;
+import android.text.TextPaint;
+import android.text.Layout.Alignment;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -60,6 +63,7 @@ public class TommyIntroView extends View implements Runnable {
 	public SheetMusic sheet;
 	public MidiOptions options;
 	Bitmap state_transition_bmp = null;
+	String num_play_quiz = null, str_x_begin = null, str_x_end = null, str_stat_empty = null;
 	
 	private boolean is_play_pressed = false;  // To indicate whether a measure should be played.
 	// Used to handle the delay between pressing and setting up the player!
@@ -790,12 +794,13 @@ public class TommyIntroView extends View implements Runnable {
 		long last_click_millis;
 		int pad_button, H_button, H_button_indicator;
 		int dy_btnrow1, dy_btnrow2, dy_btnrow3, dy_btnrow4, dy_curves;
-		final String[] btnrow1_labels = {"25%", "50%", "75%", "100%"};
-		final String[] btnrow2_labels = {"Time", "Accuracy", "Mastery"}; // Radio button
-		final String[] btnrow3_labels = {"Date", "Index"};    // How X axis is scaled
+		String[] btnrow1_labels;
+		String[] btnrow2_labels; // Radio button
+		String[] btnrow3_labels;    // How X axis is scaled
 		final String[] btnrow4_labels = {};
 		int strans_txt_xy[][] = null; // Stores computed values.
 		int strans_x = 0, strans_y = 0; float strans_zoom = 1.0f;
+		StaticLayout static_layout0;
 		
 		boolean[] btnrow1_flags = {true, true, true, true, true};
 		
@@ -810,6 +815,7 @@ public class TommyIntroView extends View implements Runnable {
 		long min_timestamp, max_timestamp, min_elapsed, max_elapsed;
 		int W_curves;
 		float curve_graph_text_size;
+		TextPaint tp0;
 		
 		private void layoutCurveGraph() {
 			// Layout the timestamps to be shown
@@ -853,6 +859,14 @@ public class TommyIntroView extends View implements Runnable {
 			H_button_indicator = (int)(5*density);
 			btn_text_size = 13.0f * density;
 			curve_graph_text_size = 10.0f * density;
+			
+			btnrow1_labels = ctx.getResources().getStringArray(R.array.btnrow1_labels);
+			btnrow2_labels = ctx.getResources().getStringArray(R.array.btnrow2_labels);
+			btnrow3_labels = ctx.getResources().getStringArray(R.array.btnrow3_labels);
+			tp0 = new TextPaint(paint);
+			tp0.setColor(TommyConfig.getCurrentStyle().btn_text_color);
+			tp0.setAntiAlias(true);
+			tp0.setTextSize(16.0f * density);
 			
 			dy_btnrow2 = (int)(16*density*3);
 			dy_btnrow4 = dy_btnrow2;
@@ -988,7 +1002,7 @@ public class TommyIntroView extends View implements Runnable {
 				c.drawText(midi_title, x+W/2, y0, paint);
 				
 				y0 = (int)(y0 + txt_hgt0);
-				String played = String.format("%d Plays, %d Quizzees", num_played, num_quiz);
+				String played = String.format(num_play_quiz, num_played, num_quiz);
 				paint.setTextSize(txt_hgt0);
 				c.drawText(played, x+W/2, y0, paint);
 				
@@ -1142,6 +1156,19 @@ public class TommyIntroView extends View implements Runnable {
 				paint.setStyle(Style.STROKE);
 				c.drawRect(x+pad_left, y0, x+pad_left+W_curves, h_hs + y0, paint);
 				
+				if(num_quiz <= 0) {
+
+					if(static_layout0 == null) {
+						static_layout0 = new StaticLayout(str_stat_empty, 
+							tp0, W_curves, Alignment.ALIGN_CENTER, 1.0f, 1.0f, true);
+					}
+					
+					c.save();
+					c.translate(x+pad_left, y0+h_hs/2 - (tp0.ascent()+tp0.descent())/2);
+					static_layout0.draw(c);
+					c.restore();
+				}
+				
 				// Ticks
 				{
 					int min_tick_y = (int)(y0 + h_hs - paint.descent());
@@ -1164,10 +1191,10 @@ public class TommyIntroView extends View implements Runnable {
 				paint.setTextAlign(Align.LEFT);
 				paint.setTextSize(curve_graph_text_size);
 				float txt_y = y0 + h_hs - paint.descent();
-				c.drawText("Begin", x+pad_left, txt_y, paint);
+				c.drawText(str_x_begin, x+pad_left, txt_y, paint);
 
 				paint.setTextAlign(Align.RIGHT);
-				c.drawText("End", x+pad_left+W_curves, txt_y, paint);
+				c.drawText(str_x_end, x+pad_left+W_curves, txt_y, paint);
 				
 				paint.setStrokeWidth(density);
 				paint.setStyle(Style.FILL);
@@ -2309,6 +2336,10 @@ public class TommyIntroView extends View implements Runnable {
 		ctx = context.getApplicationContext(); // To prevent memory leak??
 		this.options = _options;
 		TommyConfig.init(ctx);
+		num_play_quiz = ctx.getResources().getString(R.string.num_play_and_quiz);
+		str_x_begin = ctx.getResources().getString(R.string.x_begin);
+		str_x_end   = ctx.getResources().getString(R.string.x_end);
+		str_stat_empty = ctx.getResources().getString(R.string.stats_empty);
 		midi_data = _midi_data;
 		midi_title = _midi_name;
 		midi_uri_string = _midi_uri_string;
@@ -2392,8 +2423,10 @@ public class TommyIntroView extends View implements Runnable {
 		{
 			measure_mastery_histogram = new int[TommyMastery.MASTERY_STATE_SCORES.length];
 			for(int i=0; i<measure_mastery_histogram.length; i++) measure_mastery_histogram[i] = 0;
-			for(int i=0; i<measure_mastery_states.size(); i++) {
-				ArrayList<Integer> al = measure_mastery_states.get(i);
+			for(int sidx=0; sidx<measure_mastery_states.size(); sidx++) {
+
+				if(actual_staff_idx.indexOf(sidx) == -1) continue;
+				ArrayList<Integer> al = measure_mastery_states.get(sidx);
 				for(int midx = 1; midx < al.size(); midx ++) {
 					Integer x = al.get(midx);
 					measure_mastery_histogram[x] ++;
@@ -2839,6 +2872,7 @@ public class TommyIntroView extends View implements Runnable {
 		// contain the correct results.
 		if(TommyIntroActivity.popupview != null) {
 			TommyIntroActivity.popupview.update();
+			TommyIntroActivity.popupview.postInvalidate();
 		}
 	}
 	

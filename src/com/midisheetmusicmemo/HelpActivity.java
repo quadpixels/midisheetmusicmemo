@@ -44,9 +44,6 @@ public class HelpActivity extends Activity {
         
         boolean is_shown_1 = prefs_readme.getBoolean("readme1_shown", false);
         boolean is_shown_2 = prefs_readme.getBoolean("readme2_shown", false);
-        if(is_shown_1 == false && is_shown_2 == false) {
-        	btn_reset_readme.setVisibility(View.GONE);
-        }
         
         html_filename = getResources().getString(R.string.readme_html_file);
 
@@ -57,7 +54,10 @@ public class HelpActivity extends Activity {
         webview.getSettings().setJavaScriptEnabled(false);
         webview.loadUrl(html_filename);
         btn_reset_readme = (Button)findViewById(R.id.button_reset_readme);
-        
+
+        if(is_shown_1 == false && is_shown_2 == false) {
+        	btn_reset_readme.setVisibility(View.GONE);
+        }
         msg_resetreadme = getResources().getString(R.string.reset_readme);
         
         btn_reset_readme.setOnClickListener(new View.OnClickListener() {

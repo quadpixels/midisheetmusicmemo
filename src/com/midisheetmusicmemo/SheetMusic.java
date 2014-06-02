@@ -184,12 +184,16 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     public void getVisibleActualTrackIndices(ArrayList<Integer> actual_tidx) {
     	actual_tidx.clear();
     	if(numtracks_raw == 2) {
-    		actual_tidx.add(0);
-    		actual_tidx.add(1);
+    		if(options.tracks[0])
+    			actual_tidx.add(0);
+    		if(options.tracks[1])
+    			actual_tidx.add(1);
     	} else {
 	    	if(options.twoStaffs) {
-	    		actual_tidx.add(0);
-	    		actual_tidx.add(1);
+	    		if(options.tracks[0])
+	    			actual_tidx.add(0);
+	    		if(options.tracks[1])
+	    			actual_tidx.add(1);
 	    	} else {
 	    		for(int i=0; i<options.tracks.length; i++) {
 	    			if(options.tracks[i]==true) {

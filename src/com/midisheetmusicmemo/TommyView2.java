@@ -435,7 +435,9 @@ public class TommyView2 extends View implements Runnable {
 				recycle_area.centerAtMeasure(curr_hl_measure);
 			}
 		} else {
-			Toast.makeText(ctx, "Game finished! Congrats!", Toast.LENGTH_LONG).show();
+			if(MidiSheetMusicActivity.DEBUG) {
+				Toast.makeText(ctx, "Game finished! Congrats!", Toast.LENGTH_LONG).show();
+			}
 			game_state = GameState.FINISHED;
 			SharedPreferences.Editor editor = prefs_highscores.edit();
 			SharedPreferences.Editor editor_playcount = prefs_quizcount.edit();
@@ -518,8 +520,10 @@ public class TommyView2 extends View implements Runnable {
 			}
 			
 			ts4 = System.currentTimeMillis();
-			String msg = String.format("%d ms = %d HScore + %d QStats + %d QFineStats", ts4-ts1, ts2-ts1, ts3-ts2, ts4-ts3);
-			Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show();
+			if(MidiSheetMusicActivity.DEBUG) {
+				String msg = String.format("%d ms = %d HScore + %d QStats + %d QFineStats", ts4-ts1, ts2-ts1, ts3-ts2, ts4-ts3);
+				Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show();
+			}
 			
 			// Hide Selection Tile, show State Transition Tile
 			for(SelectionTile st : tiles) st.is_visible = false;

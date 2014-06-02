@@ -54,8 +54,8 @@ public class SettingsActivity extends PreferenceActivity
     private MidiOptions options;         /** The option values */
 
     // Tommy: Clear statistics.
-    private Preference reset_count_pref, reset_mastery_pref;  // Clear Mastery data
-    private int reset_count_click_count = 0, reset_mastery_click_count = 0;
+    private Preference reset_mastery_pref;  // Clear Mastery data
+    private int reset_mastery_click_count = 0;
     Context ctx;
     private String midi_uri_string;
     private long midiCRC;
@@ -171,13 +171,13 @@ public class SettingsActivity extends PreferenceActivity
                 options.instruments[i] = 0;
             }
             createView();
-        } else if(preference == reset_count_pref) {
-        	if(reset_count_click_count == -999) return true;
-        	reset_count_click_count++;
-        	reset_count_pref.setSummary(String.format("%d / 7", reset_count_click_count));
-        	if(reset_count_click_count == 7) {
+        } else if(preference == reset_mastery_pref) {
+        	if(reset_mastery_click_count == -999) return true;
+        	reset_mastery_click_count ++;
+        	reset_mastery_pref.setSummary(String.format("%d / 7", reset_mastery_click_count));
+        	if(reset_mastery_click_count == 7) {
         		SharedPreferences prefs_playcount  = 
-        			ctx.getSharedPreferences("playcounts", Context.MODE_PRIVATE);
+            			ctx.getSharedPreferences("playcounts", Context.MODE_PRIVATE);
         		Editor edt = prefs_playcount.edit();
         		edt.putInt(midi_uri_string, 0);
         		edt.commit();
@@ -193,33 +193,26 @@ public class SettingsActivity extends PreferenceActivity
         		edt = prefs_last_played.edit();
         		edt.putLong(midi_uri_string, -1L);
         		edt.commit();
-        		
-        		Toast.makeText(ctx, R.string.reset_count_done, Toast.LENGTH_LONG).show();
-        		reset_count_pref.setSummary(R.string.reset_count_done);
-        		reset_count_click_count = -999;
-        	}
-        } else if(preference == reset_mastery_pref) {
-        	if(reset_mastery_click_count == -999) return true;
-        	reset_mastery_click_count ++;
-        	reset_mastery_pref.setSummary(String.format("%d / 7", reset_mastery_click_count));
-        	if(reset_mastery_click_count == 7) {
+            		
         		String cksm = String.format("%x_HS", midiCRC);
+        		String cksm1 = String.format("%x", midiCRC);
         		SharedPreferences prefs_highscores = 
         				ctx.getSharedPreferences("highscores", Context.MODE_PRIVATE);
-        		Editor edt = prefs_highscores.edit();
+        		edt = prefs_highscores.edit();
         		edt.putString(cksm, "");
         		edt.commit();
         		
         		SharedPreferences prefs_quizstats  = 
         				ctx.getSharedPreferences("quizstats",  Context.MODE_PRIVATE);
         		edt = prefs_quizstats.edit();
-        		edt.putString(cksm, "");
+        		edt.putString(cksm1, "");
+        		edt.putString(cksm1+"_mastery_states", "");
         		edt.commit();
         		
         		SharedPreferences prefs_finegrained = 
         				ctx.getSharedPreferences("finegrained", Context.MODE_PRIVATE);
         		edt = prefs_finegrained.edit();
-        		edt.putString(cksm, "");
+        		edt.putString(cksm1, "");
         		edt.commit();
         		
         		Toast.makeText(ctx, R.string.reset_mastery_done, Toast.LENGTH_LONG).show();
@@ -234,15 +227,10 @@ public class SettingsActivity extends PreferenceActivity
     	PreferenceCategory mastery_cat = new PreferenceCategory(this);
     	mastery_cat.setTitle(R.string.reset_statistics_cat);
     	root.addPreference(mastery_cat);
-    	reset_count_pref = new Preference(this);
-    	reset_count_pref.setTitle(R.string.reset_count_pref);
-    	reset_count_pref.setOnPreferenceClickListener(this);
-    	reset_count_pref.setSummary(R.string.reset_click_count);
-    	root.addPreference(reset_count_pref);
     	
     	reset_mastery_pref = new Preference(this);
     	reset_mastery_pref.setTitle(R.string.reset_mastery_pref);
-    	reset_mastery_pref.setOnPreferenceChangeListener(this);
+    	reset_mastery_pref.setOnPreferenceClickListener(this);
     	reset_mastery_pref.setSummary(R.string.reset_click_count);
     	root.addPreference(reset_mastery_pref);
     }

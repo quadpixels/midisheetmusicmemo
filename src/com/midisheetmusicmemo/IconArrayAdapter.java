@@ -90,7 +90,7 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
              int quiz_count = prefs_quizcount.getInt(file.toStringFull(), 0);
              String sz_played = "";
              if(play_count != 0 || quiz_count != 0) {
-            	 sz_played = "\n" + String.format(sz_num_play_quiz, play_count, quiz_count);
+            	 sz_played = String.format(sz_num_play_quiz, play_count, quiz_count);
              } else { }
              String sz_lastplay;
              long date_millis = prefs_last_played.getLong(file.toStringFull(), -1); // 2014-06-02 toString --> toStringFull
