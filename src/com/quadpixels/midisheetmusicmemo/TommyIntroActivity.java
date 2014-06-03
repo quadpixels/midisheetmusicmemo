@@ -2,21 +2,6 @@ package com.quadpixels.midisheetmusicmemo;
 
 import java.util.zip.CRC32;
 
-import com.quadpixels.midisheetmusicmemo.TommyPopupView.HelpInfos;
-import com.saltinemidisheetmusic.ChooseSongActivity;
-import com.saltinemidisheetmusic.MidiFile;
-import com.saltinemidisheetmusic.MidiOptions;
-import com.saltinemidisheetmusic.MidiPlayer;
-import com.saltinemidisheetmusic.MidiSheetMusicActivity;
-import com.saltinemidisheetmusic.R;
-import com.saltinemidisheetmusic.SettingsActivity;
-import com.saltinemidisheetmusic.SheetMusic;
-import com.saltinemidisheetmusic.SheetMusicActivity;
-import com.saltinemidisheetmusic.R.array;
-import com.saltinemidisheetmusic.R.id;
-import com.saltinemidisheetmusic.R.layout;
-import com.saltinemidisheetmusic.R.string;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -24,9 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Rect;
 import android.os.Bundle;
-import android.os.Debug;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,13 +17,22 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.midisheetmusicmemo.ChooseSongActivity;
+import com.midisheetmusicmemo.MidiFile;
+import com.midisheetmusicmemo.MidiOptions;
+import com.midisheetmusicmemo.MidiPlayer;
+import com.midisheetmusicmemo.MidiSheetMusicActivity;
+import com.midisheetmusicmemo.R;
+import com.midisheetmusicmemo.SettingsActivity;
+import com.midisheetmusicmemo.SheetMusic;
+import com.midisheetmusicmemo.SheetMusicActivity;
+import com.quadpixels.midisheetmusicmemo.TommyPopupView.HelpInfos;
 
 // 2014-03-14 Currently rotating screen stops music (the user has to restart it) 
 

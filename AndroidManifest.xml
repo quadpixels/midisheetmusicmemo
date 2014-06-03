@@ -1,39 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.saltinemidisheetmusic"
+      package="com.midisheetmusicmemo"
       android:versionCode="9"
       android:versionName="2.6">
     <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="10" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <application android:icon="@drawable/icon" android:label="@string/app_name">
-        <activity android:name="com.saltinemidisheetmusic.MidiSheetMusicActivity"
+        <activity android:name="com.midisheetmusicmemo.MidiSheetMusicActivity"
                   android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.saltinemidisheetmusic.ChooseSongActivity" >
+        <activity android:name="com.midisheetmusicmemo.ChooseSongActivity" >
         </activity>
-        <activity android:name="com.saltinemidisheetmusic.FileBrowserActivity" >
+        <activity android:name="com.midisheetmusicmemo.FileBrowserActivity" >
         </activity>
-        <activity android:name="com.saltinemidisheetmusic.AllSongsActivity" >
+        <activity android:name="com.midisheetmusicmemo.AllSongsActivity" >
         </activity>
-        <activity android:name="com.saltinemidisheetmusic.RecentSongsActivity" >
+        <activity android:name="com.midisheetmusicmemo.RecentSongsActivity" >
         </activity>
-        <activity android:name="com.saltinemidisheetmusic.SettingsActivity" >
+        <activity android:name="com.midisheetmusicmemo.SettingsActivity" >
         </activity>
-        <activity android:name="com.saltinemidisheetmusic.HelpActivity" >
+        <activity android:name="com.midisheetmusicmemo.HelpActivity" >
         </activity>
         <activity android:name="com.quadpixels.midisheetmusicmemo.TestActivity" >
         </activity>
         <activity android:name="com.quadpixels.midisheetmusicmemo.TommyIntroActivity"
             android:hardwareAccelerated="true" >
         </activity>
-        <activity android:name="com.quadpixels.midisheetmusicmemo.TommyView2ActivityActivity"
+        <activity android:name="com.quadpixels.midisheetmusicmemo.TommyView2Activity"
             android:hardwareAccelerated="true" >
         </activity>
-        <activity android:name="com.saltinemidisheetmusic.SheetMusicActivity" 
+        <activity android:name="com.midisheetmusicmemo.SheetMusicActivity" 
                   android:screenOrientation="landscape"
                   android:configChanges="orientation">
             <intent-filter>

@@ -22,12 +22,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 
-import com.saltinemidisheetmusic.MidiFile;
-import com.saltinemidisheetmusic.MidiSheetMusicActivity;
-import com.saltinemidisheetmusic.R;
-import com.saltinemidisheetmusic.SheetMusic;
-import com.saltinemidisheetmusic.R.drawable;
-import com.saltinemidisheetmusic.SheetMusic.Vec2;
+import com.midisheetmusicmemo.MidiFile;
+import com.midisheetmusicmemo.MidiSheetMusicActivity;
+import com.midisheetmusicmemo.SheetMusic;
+import com.midisheetmusicmemo.SheetMusic.Vec2;
+import com.midisheetmusicmemo.R;
+import com.midisheetmusicmemo.R.drawable;
 
 import android.content.Context;
 import android.content.res.AssetManager;

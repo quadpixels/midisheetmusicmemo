@@ -17,10 +17,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Bundle;
@@ -30,15 +30,12 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
-import com.quadpixels.midisheetmusicmemo.TommyIntroView.MeasureTile;
-import com.saltinemidisheetmusic.MidiFile;
-import com.saltinemidisheetmusic.MidiOptions;
-import com.saltinemidisheetmusic.MidiSheetMusicActivity;
-import com.saltinemidisheetmusic.R;
-import com.saltinemidisheetmusic.SheetMusic;
-import com.saltinemidisheetmusic.R.drawable;
-import com.saltinemidisheetmusic.R.string;
-import com.saltinemidisheetmusic.SheetMusic.Vec2;
+import com.midisheetmusicmemo.MidiFile;
+import com.midisheetmusicmemo.MidiOptions;
+import com.midisheetmusicmemo.MidiSheetMusicActivity;
+import com.midisheetmusicmemo.R;
+import com.midisheetmusicmemo.SheetMusic;
+import com.midisheetmusicmemo.SheetMusic.Vec2;
 
 // 2014-03-02: Refactor to prepare for more refactoring --- bitmap cache
 // 2014-03-03: Tested on Android 4.3 and attempting to find the cause of the memory leak
@@ -47,6 +44,8 @@ import com.saltinemidisheetmusic.SheetMusic.Vec2;
 // 2014-05-03: Improve Inertial Scrolling.
 // 2014-05-05: To implement "Mission Accomplished" dialog, showing Before and After
 // 2014-05-31: Bugfix: when moving the horizontal bar, recycle area would go out-of-bounds.
+// 2014-06-03: "Track" and "staff" are used interchangeably in this doc
+//             Added histograms to status load/save during orientation change
 
 public class TommyView2 extends View implements Runnable {
 	
@@ -111,7 +110,6 @@ public class TommyView2 extends View implements Runnable {
 	// This array is to be read from conf file
 	ArrayList<ArrayList<Integer>> measure_mastery_states       = new ArrayList<ArrayList<Integer>>();
 	ArrayList<ArrayList<TommyMastery>> masteries = new ArrayList<ArrayList<TommyMastery>>();
-	ArrayList<Integer> actual_staff_idx = new ArrayList<Integer>();
 	
 	// Histograms, before and after. I need to use ArrayList b/c I need to serialize them
 	//   and save them across orientation changes.
@@ -210,11 +208,17 @@ public class TommyView2 extends View implements Runnable {
 		bundle.putFloat("blanks_ratio", blanks_ratio);
 		bundle.putInt("num_right_clicks", num_right_clicks);
 		bundle.putInt("numwrong_clicks", num_wrong_clicks);
-		bundle.putSerializable("mastery_histogram_before", mastery_histogram_before);
-		bundle.putSerializable("mastery_histogram_after",  mastery_histogram_after);
+		bundle.putIntArray("mastery_histogram_before", mastery_histogram_before);
+		bundle.putIntArray("mastery_histogram_after",  mastery_histogram_after);
+		bundle.putSerializable("actual_track_idx", actual_track_idx);
+		bundle.putSerializable("masteries", masteries);
+		bundle.putSerializable("measure_mastery_states", measure_mastery_states);
+		bitmap_helper.free();
 		is_running = false;
 	}
 	
+	// A crazy smoke tester
+	// may rotate the screen 2147483647 times in 1 quiz, causing the program to crash! 
 	@SuppressWarnings("unchecked")
 	public void loadState(Bundle bundle) {
 		deck_uids = (ArrayList<ArrayList<Integer>>)bundle.getSerializable("deck_uids");
@@ -246,6 +250,11 @@ public class TommyView2 extends View implements Runnable {
 		blanks_ratio = bundle.getFloat("blanks_ratio");
 		num_right_clicks = bundle.getInt("num_right_clicks");
 		num_wrong_clicks = bundle.getInt("num_wrong_clicks");
+		actual_track_idx = (ArrayList<Integer>) bundle.getSerializable("actual_track_idx");
+		masteries = (ArrayList<ArrayList<TommyMastery>>) bundle.getSerializable("masteries");
+		mastery_histogram_before= bundle.getIntArray("mastery_histogram_before");
+		mastery_histogram_after = bundle.getIntArray("mastery_histogram_after");
+		measure_mastery_states = (ArrayList<ArrayList<Integer>>) bundle.getSerializable("measure_mastery_states");
 		is_running = true;
 	}
 	
@@ -514,11 +523,13 @@ public class TommyView2 extends View implements Runnable {
 				mastery_histogram_after[i] = 0;
 			String cksm = String.format("%x", checksum);
 			{
-				for(int i=0; i<NT; i++) {
+				for(int i=0; i<NT; i++) { // i is index of staff.
+					boolean is_shown = true;
+					if(actual_track_idx.indexOf(i) == -1) is_shown = false;
 					for(int j=0; j<num_measures; j++) { // 2014-05-31: Ignore the first measure 
 						int st = masteries.get(i).get(j).getMasteryState();
 						measure_mastery_states.get(i).set(j, st);
-						if(j>0) mastery_histogram_after[st] ++;
+						if(is_shown && j>0) mastery_histogram_after[st] ++;
 					}
 				}
 				String sz = TommyConfig.MasteryStateArrayToJSONString(measure_mastery_states);
@@ -891,7 +902,8 @@ public class TommyView2 extends View implements Runnable {
 						
 						pushFineGrainedHistory(curr_hl_staff, curr_hl_measure, is_curr_measure_ok_first_try, delta);
 						int actual_sidx = actual_track_idx.get(curr_hl_staff);
-						masteries.get(actual_sidx).get(curr_hl_measure).appendOutcome(is_curr_measure_ok_first_try);
+						masteries.get(actual_sidx).
+							get(curr_hl_measure).appendOutcome(is_curr_measure_ok_first_try);
 					}
 					
 					
@@ -1965,6 +1977,9 @@ public class TommyView2 extends View implements Runnable {
 
 		mastery_histogram_before = new int[TommyMastery.MASTERY_STATE_SCORES.length];
 		mastery_histogram_after  = new int[TommyMastery.MASTERY_STATE_SCORES.length];
+
+		sheet.getVisibleActualTrackIndices(actual_track_idx);
+		
 		int NT = sheet.getActualNumberOfTracks();
 		{
 			String mssz = prefs_quizstats.getString(cksm+"_mastery_states", "");
@@ -1973,16 +1988,18 @@ public class TommyView2 extends View implements Runnable {
 				masteries.add(new ArrayList<TommyMastery>());
 			}
 			TommyConfig.populateMasteryStateArrayFromJSONString(NT, num_measures, measure_mastery_states, mssz);
-			for(int i=0; i<NT; i++) {
-				for(int j=0; j<num_measures; j++) { // Ignore the first measure.
+
+			for(int i=0; i<NT; i++) { // staff index
+				boolean is_shown = true; // Is this staff shown? If no then histogram is not incremented
+				if(actual_track_idx.indexOf(i) == -1) is_shown = false;
+				for(int j=0; j<num_measures; j++) { // Ignore the first measure. measure index.
 					int x = measure_mastery_states.get(i).get(j);
 					masteries.get(i).add(new TommyMastery(x));
-					if(j>0) mastery_histogram_before[x] ++;
+					if(j>0 && is_shown) mastery_histogram_before[x] ++;
 				}
 			}
 		}
 		
-		sheet.getVisibleActualTrackIndices(actual_track_idx);
 		bitmap_helper = new BitmapHelper(this, sheet, 1.0f, 1.0f);
 		is_inited = true;
 	}

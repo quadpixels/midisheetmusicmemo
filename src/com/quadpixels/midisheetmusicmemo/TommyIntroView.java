@@ -18,7 +18,6 @@ import java.util.zip.CRC32;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.LabeledIntent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
@@ -32,23 +31,19 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.NinePatchDrawable;
 import android.os.Bundle;
+import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.text.TextPaint;
-import android.text.Layout.Alignment;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.saltinemidisheetmusic.MidiFile;
-import com.saltinemidisheetmusic.MidiOptions;
-import com.saltinemidisheetmusic.MidiSheetMusicActivity;
-import com.saltinemidisheetmusic.R;
-import com.saltinemidisheetmusic.SheetMusic;
-import com.saltinemidisheetmusic.R.array;
-import com.saltinemidisheetmusic.R.drawable;
-import com.saltinemidisheetmusic.R.plurals;
-import com.saltinemidisheetmusic.R.string;
-import com.saltinemidisheetmusic.SheetMusic.Vec2;
+import com.midisheetmusicmemo.MidiFile;
+import com.midisheetmusicmemo.MidiOptions;
+import com.midisheetmusicmemo.MidiSheetMusicActivity;
+import com.midisheetmusicmemo.R;
+import com.midisheetmusicmemo.SheetMusic;
+import com.midisheetmusicmemo.SheetMusic.Vec2;
 
 public class TommyIntroView extends View implements Runnable {
 	// boilerplate stuff
@@ -1340,7 +1335,7 @@ public class TommyIntroView extends View implements Runnable {
 				int total_count = 0;
 				
 				paint.setStyle(Style.FILL);
-				paint.setTextSize(strans_zoom * 15.0f);
+				paint.setTextSize(strans_zoom * 15.0f * density);
 				for(int i=0; i<strans_txt_xy.length; i++) {
 					// 1. Draw
 					int count = measure_mastery_histogram[i];

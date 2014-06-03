@@ -2,23 +2,19 @@ package com.quadpixels.midisheetmusicmemo;
 
 import java.util.zip.CRC32;
 
-import com.quadpixels.midisheetmusicmemo.TommyPopupView.HelpInfos;
-import com.saltinemidisheetmusic.MidiFile;
-import com.saltinemidisheetmusic.MidiOptions;
-import com.saltinemidisheetmusic.R;
-import com.saltinemidisheetmusic.SheetMusicActivity;
-
 import android.app.Activity;
 import android.app.ActivityManager;
-import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+
+import com.midisheetmusicmemo.MidiFile;
+import com.midisheetmusicmemo.MidiOptions;
+import com.midisheetmusicmemo.SheetMusicActivity;
+import com.quadpixels.midisheetmusicmemo.TommyPopupView.HelpInfos;
 
 public class TommyView2Activity extends Activity {
 	TommyView2 tommyview = null;

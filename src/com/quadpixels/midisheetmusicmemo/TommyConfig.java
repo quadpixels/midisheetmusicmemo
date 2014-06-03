@@ -6,9 +6,8 @@ import java.util.Collections;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import com.saltinemidisheetmusic.R;
-import com.saltinemidisheetmusic.R.array;
-import com.saltinemidisheetmusic.R.drawable;
+import com.midisheetmusicmemo.R;
+import com.midisheetmusicmemo.R.*;
 
 import android.content.Context;
 import android.graphics.Bitmap;

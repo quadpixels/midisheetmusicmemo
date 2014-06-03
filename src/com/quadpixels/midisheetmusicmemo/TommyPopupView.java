@@ -2,9 +2,9 @@
 
 package com.quadpixels.midisheetmusicmemo;
 
-import com.saltinemidisheetmusic.MidiSheetMusicActivity;
-import com.saltinemidisheetmusic.R;
-import com.saltinemidisheetmusic.R.string;
+import com.midisheetmusicmemo.MidiSheetMusicActivity;
+import com.midisheetmusicmemo.R;
+import com.midisheetmusicmemo.R.string;
 
 import android.content.Context;
 import android.content.SharedPreferences;

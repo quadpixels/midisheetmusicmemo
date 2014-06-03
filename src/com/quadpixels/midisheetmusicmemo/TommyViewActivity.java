@@ -1,6 +1,6 @@
 package com.quadpixels.midisheetmusicmemo;
 
-import com.saltinemidisheetmusic.SheetMusicActivity;
+import com.midisheetmusicmemo.SheetMusicActivity;
 
 import android.app.Activity;
 import android.content.Context;
