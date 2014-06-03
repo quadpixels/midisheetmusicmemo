@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="transpose_entries">
+        <item>Up 12 notes</item>
+        <item>Up 11 notes</item>
+        <item>Up 10 notes</item>
+        <item>Up 9 notes</item>
+        <item>Up 8 notes</item>
+        <item>Up 7 notes</item>
+        <item>Up 6 notes</item>
+        <item>Up 5 notes</item>
+        <item>Up 4 notes</item>
+        <item>Up 3 notes</item>
+        <item>Up 2 notes</item>
+        <item>Up 1 note</item>
+        <item>None</item>
+        <item>Down 1 note</item>
+        <item>Down 2 notes</item>
+        <item>Down 3 notes</item>
+        <item>Down 4 notes</item>
+        <item>Down 5 notes</item>
+        <item>Down 6 notes</item>
+        <item>Down 7 notes</item>
+        <item>Down 8 notes</item>
+        <item>Down 9 notes</item>
+        <item>Down 10 notes</item>
+        <item>Down 11 notes</item>
+        <item>Down 12 notes</item>
+    </string-array>
+
+    <string-array name="transpose_values">
+        <item>12</item>
+        <item>11</item>
+        <item>10</item>
+        <item>9</item>
+        <item>8</item>
+        <item>7</item>
+        <item>6</item>
+        <item>5</item>
+        <item>4</item>
+        <item>3</item>
+        <item>2</item>
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+        <item>-2</item>
+        <item>-3</item>
+        <item>-4</item>
+        <item>-5</item>
+        <item>-6</item>
+        <item>-7</item>
+        <item>-8</item>
+        <item>-9</item>
+        <item>-10</item>
+        <item>-11</item>
+        <item>-12</item>
+    </string-array>
+
+    <string-array name="key_signature_entries">
+        <item>Default</item>
+        <item>A major         F# minor </item>
+        <item>B-flat major   G minor </item>
+        <item>B major         A-flat minor</item>
+        <item>C major         A minor</item>
+        <item>D-flat major   B-flat minor</item>
+        <item>D major         B minor</item>
+        <item>E-flat major   C minor</item>
+        <item>E major         C# minor</item>
+        <item>F major         D minor</item>
+        <item>G-flat major   E-flat minor</item>
+        <item>G major         E minor</item>
+        <item>A-flat major    F minor</item>
+    </string-array>
+
+    <string-array name="key_signature_values">
+        <item>-1</item>
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+    </string-array>
+
+    <string-array name="combine_interval_entries">
+        <item>20 milliseconds</item>
+        <item>40 milliseconds</item>
+        <item>60 milliseconds</item>
+        <item>80 milliseconds</item>
+        <item>100 milliseconds</item>
+    </string-array>
+
+    <string-array name="combine_interval_values">
+        <item>20</item>
+        <item>40</item>
+        <item>60</item>
+        <item>80</item>
+        <item>100</item>
+    </string-array>
+
+    <string-array name="show_note_letter_entries">
+        <item>None</item>
+        <item>Letters (A, A#)</item>
+        <item>Fixed Do-Re-Mi</item>
+        <item>Movable Do-Re-Mi</item>
+        <item>Fixed Numbers</item>
+        <item>Movable Numbers</item>
+    </string-array>
+
+    <string-array name="show_note_letter_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
+    <string-array name="midi_instrument_names">
+        	<item>Acoustic Grand Piano</item>
+	<item>Bright Acoustic Piano</item>
+	<item>Electric Grand Piano</item>
+	<item>Honky-tonk Piano</item>
+	<item>Electric Piano 1</item>
+	<item>Electric Piano 2</item>
+	<item>Harpsichord</item>
+	<item>Clavi</item>
+	<item>Celesta</item>
+	<item>Glockenspiel</item>
+	<item>Music Box</item>
+	<item>Vibraphone</item>
+	<item>Marimba</item>
+	<item>Xylophone</item>
+	<item>Tubular Bells</item>
+	<item>Dulcimer</item>
+	<item>Drawbar Organ</item>
+	<item>Percussive Organ</item>
+	<item>Rock Organ</item>
+	<item>Church Organ</item>
+	<item>Reed Organ</item>
+	<item>Accordion</item>
+	<item>Harmonica</item>
+	<item>Tango Accordion</item>
+	<item>Acoustic Guitar (nylon)</item>
+	<item>Acoustic Guitar (steel)</item>
+	<item>Electric Guitar (jazz)</item>
+	<item>Electric Guitar (clean)</item>
+	<item>Electric Guitar (muted)</item>
+	<item>Overdriven Guitar</item>
+	<item>Distortion Guitar</item>
+	<item>Guitar harmonics</item>
+	<item>Acoustic Bass</item>
+	<item>Electric Bass (finger)</item>
+	<item>Electric Bass (pick)</item>
+	<item>Fretless Bass</item>
+	<item>Slap Bass 1</item>
+	<item>Slap Bass 2</item>
+	<item>Synth Bass 1</item>
+	<item>Synth Bass 2</item>
+	<item>Violin</item>
+	<item>Viola</item>
+	<item>Cello</item>
+	<item>Contrabass</item>
+	<item>Tremolo Strings</item>
+	<item>Pizzicato Strings</item>
+	<item>Orchestral Harp</item>
+	<item>Timpani</item>
+	<item>String Ensemble 1</item>
+	<item>String Ensemble 2</item>
+	<item>SynthStrings 1</item>
+	<item>SynthStrings 2</item>
+	<item>Choir Aahs</item>
+	<item>Voice Oohs</item>
+	<item>Synth Voice</item>
+	<item>Orchestra Hit</item>
+	<item>Trumpet</item>
+	<item>Trombone</item>
+	<item>Tuba</item>
+	<item>Muted Trumpet</item>
+	<item>French Horn</item>
+	<item>Brass Section</item>
+	<item>SynthBrass 1</item>
+	<item>SynthBrass 2</item>
+	<item>Soprano Sax</item>
+	<item>Alto Sax</item>
+	<item>Tenor Sax</item>
+	<item>Baritone Sax</item>
+	<item>Oboe</item>
+	<item>English Horn</item>
+	<item>Bassoon</item>
+	<item>Clarinet</item>
+	<item>Piccolo</item>
+	<item>Flute</item>
+	<item>Recorder</item>
+	<item>Pan Flute</item>
+	<item>Blown Bottle</item>
+	<item>Shakuhachi</item>
+	<item>Whistle</item>
+	<item>Ocarina</item>
+	<item>Lead 1 (square)</item>
+	<item>Lead 2 (sawtooth)</item>
+	<item>Lead 3 (calliope)</item>
+	<item>Lead 4 (chiff)</item>
+	<item>Lead 5 (charang)</item>
+	<item>Lead 6 (voice)</item>
+	<item>Lead 7 (fifths)</item>
+	<item>Lead 8 (bass + lead)</item>
+	<item>Pad 1 (new age)</item>
+	<item>Pad 2 (warm)</item>
+	<item>Pad 3 (polysynth)</item>
+	<item>Pad 4 (choir)</item>
+	<item>Pad 5 (bowed)</item>
+	<item>Pad 6 (metallic)</item>
+	<item>Pad 7 (halo)</item>
+	<item>Pad 8 (sweep)</item>
+	<item>FX 1 (rain)</item>
+	<item>FX 2 (soundtrack)</item>
+	<item>FX 3 (crystal)</item>
+	<item>FX 4 (atmosphere)</item>
+	<item>FX 5 (brightness)</item>
+	<item>FX 6 (goblins)</item>
+	<item>FX 7 (echoes)</item>
+	<item>FX 8 (sci-fi)</item>
+	<item>Sitar</item>
+	<item>Banjo</item>
+	<item>Shamisen</item>
+	<item>Koto</item>
+	<item>Kalimba</item>
+	<item>Bag pipe</item>
+	<item>Fiddle</item>
+	<item>Shanai</item>
+	<item>Tinkle Bell</item>
+	<item>Agogo</item>
+	<item>Steel Drums</item>
+	<item>Woodblock</item>
+	<item>Taiko Drum</item>
+	<item>Melodic Tom</item>
+	<item>Synth Drum</item>
+	<item>Reverse Cymbal</item>
+	<item>Guitar Fret Noise</item>
+	<item>Breath Noise</item>
+	<item>Seashore</item>
+	<item>Bird Tweet</item>
+	<item>Telephone Ring</item>
+	<item>Helicopter</item>
+	<item>Applause</item>
+	<item>Gunshot</item>
+	<item>Percussion</item>
+	</string-array>
+
+    <string-array name="color_schemes">
+        <item>Black(Default)</item>
+        <item>Bamboo</item>
+        <item>Sunset</item>
+        <item>Horizon Blue</item>
+        <item>Desert</item>
+    </string-array>
+    
+    <string-array name="gauge_names">
+        <item>None</item>
+        <item>Last 5 Response Times</item>
+        <item>Occurrences</item>
+        <item>Accuracy</item>
+        <item>Overall Response Time</item>
+        <item>Effective Overall Response Time</item>
+        <item>Mastery Level</item>
+    </string-array>
+    
+    <string-array name="btnrow1_labels">
+        <item>25%</item>
+        <item>50%</item>
+        <item>75%</item>
+        <item>100%</item>
+    </string-array>
+    
+    <string-array name="btnrow2_labels">
+        <item>Time</item>
+        <item>Accuracy</item>
+        <item>Mastery</item>
+    </string-array>
+    
+    <string-array name="btnrow3_labels">
+        <item>Date</item>
+        <item>Index</item>
+    </string-array>
+</resources>

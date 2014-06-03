@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Saltine Sheet Music</string>
+    <string name="choose_song">Choose Song</string>
+    <string name="song_settings_str">Song Settings</string>
+    <string name="save_images_str">Save As Images</string>
+    <string name="save_images_descr_str">Save the sheet music as images, in the directory /Pictures/MidiSheetMusic, with the following filename</string>
+    <string name="help_str">Help</string>
+    <string name="sheet_prefs_title">Sheet Music Preferences</string>
+    <string name="restore_defaults">Restore Default Settings</string>
+    <string name="select_tracks_to_display">Select Tracks to Display</string>
+    <string name="select_tracks_to_mute">Select Tracks to Mute</string>
+    <string name="select_instruments_per_track">Select Instruments For Each Track</string>
+    <string name="set_all_to_piano">Set All Instruments to Piano</string>
+    <string name="scroll_vertically">Scroll Vertically</string>
+    <string name="show_piano">Show the Piano</string>
+    <string name="show_lyrics">Show Lyrics</string>
+    <string name="show_note_letters">Show Note Letters</string>
+    <string name="combine_to_two_staffs">Combine To Two Staffs</string>
+    <string name="combine_to_two_staffs_summary">Combine all the tracks into two staffs (left hand and right hand staffs). </string>
+    <string name="split_to_two_staffs">Split Track Into Two Staffs</string>
+    <string name="split_to_two_staffs_summary">Split the single track into two staffs (left hand and right hand staffs).</string>
+    <string name="transpose">Transpose Notes</string>
+    <string name="key_signature">Key Signature</string>
+    <string name="time_signature">Time Signature</string>
+    <string name="combine_interval">Combine Interval</string>
+    <string name="combine_interval_summary">Notes within the given interval (in milliseconds) are combined into a single chord</string>
+    <string name="right_hand_color">Right Hand Color</string>
+    <string name="left_hand_color">Left Hand Color</string>
+    <string name="show_measures">Show Measure Numbers</string>
+    <string name="play_measures_in_loop_title">Settings for Play Measures in a Loop</string>
+    <string name="play_measures_in_loop">Play Measures in a Loop</string>
+    <string name="play_measures_in_loop_start">Start Measure</string>
+    <string name="play_measures_in_loop_end">End Measure</string>
+    <string name="scan_button_title">Scan SD Card for MIDI files</string>
+    <string name="scan_files_str">Scan for MIDI Files</string>
+    <string name="browse_files_str">Browse for MIDI Files</string>
+
+    <string name="num_play_and_quiz">%1$d plays, %2$d quizzees</string>
+    <string name="last_played_date">Last quiz: %1$s</string>
+    
+    <string name="difficulty_1">25% blank</string>
+    <string name="difficulty_2">50% blank</string>
+    <string name="difficulty_3">75% blank</string>
+    <string name="difficulty_4">All blank</string>
+    <string name="please_make_a_choice">Please make a choice</string>
+    <string name="well_done">Well done!</string>
+    <string name="tiles_to_go">tiles to go!</string>
+    
+    <string name="intro_button2">Start Quiz!</string>
+    <string name="error_no_tracks_selected">Please select at least 1 track in Settings before starting quiz.</string>
+    <string name="bitmap_loading">Loading</string>
+    
+    <string name="zoom_in">Zoom In</string>
+    <string name="zoom_out">Zoom Out</string>
+    
+    <string name="x_begin">Oldest</string>
+    <string name="x_end">Latest</string>
+    <string name="stats_empty">Statistics will show up after using quiz mode.</string>
+    
+    <string name="select_color_scheme">Select a color scheme</string>
+    <string name="select_gauge">Select gauge overlay</string>
+    <string name="load_original_msm">Use original MidiSheetMusic</string>
+    <string name="playback_speed">Playback speed</string>
+    
+    <string name="label_reset_readme">Reset in-app readme</string>
+    <string name="reset_readme">Quick help is reset!</string>
+    
+    <string name="readme_html_file">file:///android_asset/readme.html</string>
+    
+    <string name="help21">Pan to scroll up/down. Long-press a measure to starting playing, click again to stop playing.</string>
+    <string name="help22">Pan down to reveal these four bottons for controlling over playback and display of sheet music.</string>
+    <string name="help23">This area shows various statistics of your mastery of this sheet music.</string>
+    <string name="help12">Press here to start memorization quiz</string>
+    <string name="help31">This area shows the measures to be filled. Pan left/right to scroll. Triple click to zoom in/zoom out.</string>
+    <string name="help32">Click buttons in this area to make choices (Select difficult to start with, or tile to fill in.)</string>
+    
+    <string name="reset_statistics_cat">Sheet Music Memo Stats</string>
+    <string name="reset_mastery_pref">Reset mastery record and play count</string>
+    <string name="reset_click_count">Click 7 times to confirm.</string>
+    <string name="reset_mastery_done">Mastery record and play and quiz counts reset to empty.</string>
+    
+    <plurals name="num_days">
+        <item quantity="one">1 day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="num_hours">
+        <item quantity="one">1 hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+    <plurals name="num_minutes">
+        <item quantity="one">1 minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <plurals name="num_seconds">
+        <item quantity="one">1 second</item>
+        <item quantity="other">%d seconds</item>
+    </plurals>
+    <string name="num_less_1min">‹1 min</string>
+    
+    <string name="no_quiz_data_query_found">No quiz record of the specified difficulty level(s) is found.</string>
+    
+</resources>

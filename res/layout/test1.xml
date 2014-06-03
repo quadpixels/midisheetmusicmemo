@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:alpha="122"
+    android:background="#FFFFCC" >
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="238dp"
+        android:layout_height="91dp"
+        android:text="Midi Sheet Music Flashcards" />
+
+    <EditText
+        android:id="@+id/editText1"
+        android:layout_width="193dp"
+        android:layout_height="190dp"
+        android:layout_marginBottom="180dp"
+        android:layout_marginRight="108dp"
+        android:ems="10"
+        android:text="It may seem unbelievable at first, but an under-weight 6-year-old and a gargantuan" />
+
+</FrameLayout>

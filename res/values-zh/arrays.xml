@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <string-array name="transpose_entries">
+        <item>往上移12个音</item>
+		<item>往上移11个音</item>
+		<item>往上移10个音</item>
+		<item>往上移9个音</item>
+		<item>往上移8个音</item>
+		<item>往上移7个音</item>
+		<item>往上移6个音</item>
+		<item>往上移5个音</item>
+		<item>往上移4个音</item>
+		<item>往上移3个音</item>
+		<item>往上移2个音</item>
+		<item>往上移1个音</item>
+		<item>不移调</item>
+		<item>往下移1个音</item>
+		<item>往下移2个音</item>
+		<item>往下移3个音</item>
+		<item>往下移4个音</item>
+		<item>往下移5个音</item>
+		<item>往下移6个音</item>
+		<item>往下移7个音</item>
+		<item>往下移8个音</item>
+		<item>往下移9个音</item>
+		<item>往下移10个音</item>
+		<item>往下移11个音</item>
+		<item>往下移12个音</item>
+	</string-array>
+    
+    <string-array name="transpose_values">
+        <item>12</item>
+        <item>11</item>
+        <item>10</item>
+        <item>9</item>
+        <item>8</item>
+        <item>7</item>
+        <item>6</item>
+        <item>5</item>
+        <item>4</item>
+        <item>3</item>
+        <item>2</item>
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+        <item>-2</item>
+        <item>-3</item>
+        <item>-4</item>
+        <item>-5</item>
+        <item>-6</item>
+        <item>-7</item>
+        <item>-8</item>
+        <item>-9</item>
+        <item>-10</item>
+        <item>-11</item>
+        <item>-12</item>
+    </string-array>
+    
+    <string-array name="key_signature_entries">
+        <item>自动决定</item>
+        <item>A大调／F#小调 </item>
+        <item>降B大调／G小调</item>
+        <item>B大调／降A小调</item>
+        <item>C大调／A小调</item>
+        <item>降D大调／降B小调</item>
+        <item>D大调／B小调</item>
+        <item>降E大调／C小调</item>
+        <item>E大调／C#小调</item>
+        <item>F大调／D小调</item>
+        <item>降G大调／降E小调</item>
+        <item>G大调／降E小调</item>
+        <item>降A大调／F小调</item>
+    </string-array>
+    
+    <string-array name="key_signature_values">
+        <item>-1</item>
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+        <item>11</item>
+    </string-array>
+    
+    <string-array name="combine_interval_entries">
+        <item>20毫秒</item>
+        <item>40毫秒</item>
+        <item>60毫秒</item>
+        <item>80毫秒</item>
+        <item>100毫秒</item>
+    </string-array>
+    
+    
+    <string-array name="combine_interval_values">
+        <item>20</item>
+        <item>40</item>
+        <item>60</item>
+        <item>80</item>
+        <item>100</item>
+    </string-array>
+    
+    
+    <string-array name="show_note_letter_entries">
+        <item>None</item>
+        <item>Letters (A, A#)</item>
+        <item>Fixed Do-Re-Mi</item>
+        <item>Movable Do-Re-Mi</item>
+        <item>Fixed Numbers</item>
+        <item>Movable Numbers</item>
+    </string-array>
+    
+    <string-array name="show_note_letter_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+    
+    
+    <string-array name="midi_instrument_names">
+    <item>大钢琴（声学钢琴）</item>
+	<item>明亮的钢琴</item>
+	<item>电钢琴</item>
+	<item>酒吧钢琴</item>
+	<item>电钢琴1</item>
+	<item>电钢琴2</item>
+	<item>羽管键琴（拨弦古钢琴）</item>
+	<item>科拉维科特琴（击弦古钢琴）</item>
+	<item>钢片琴</item>
+	<item>钟琴</item>
+	<item>八音盒</item>
+	<item>颤音琴</item>
+	<item>马林巴</item>
+	<item>木琴</item>
+	<item>管钟</item>
+	<item>大扬琴</item>
+	<item>击杆风琴</item>
+	<item>打击式风琴</item>
+	<item>摇滚风琴</item>
+	<item>教堂风琴</item>
+	<item>簧管风琴</item>
+	<item>手风琴</item>
+	<item>口琴</item>
+	<item>探戈手风琴</item>
+	<item>尼龙弦吉他</item>
+	<item>钢弦吉他</item>
+	<item>爵士电吉他</item>
+	<item>清音电吉他</item>
+	<item>闷音电吉他</item>
+	<item>加驱动效果的电吉他</item>
+	<item>加失真效果的电吉他 </item>
+	<item>吉他和音</item>
+	<item>大贝司（声学贝司）</item>
+	<item>电贝司（指弹）</item>
+	<item>电贝司（拨片）</item>
+	<item>无品贝司</item>
+	<item>掌击贝司1</item>
+	<item>掌击贝司2</item>
+	<item>电子合成Bass 1</item>
+	<item>电子合成Bass 2</item>
+	<item>小提琴</item>
+	<item>中提琴</item>
+	<item>大提琴</item>
+	<item>低音大提琴</item>
+	<item>弦乐群颤音音色</item>
+	<item>弦乐群拨弦音色</item>
+	<item>竖琴</item>
+	<item>定音鼓</item>
+	<item>弦乐合奏音色1</item>
+	<item>S弦乐合奏音色2</item>
+	<item>合成弦乐合奏音色1</item>
+	<item>合成弦乐合奏音色2</item>
+	<item>人声合唱“啊”</item>
+	<item>人声“嘟”</item>
+	<item>合成人声</item>
+	<item>管弦乐敲击齐奏</item>
+	<item>小号</item>
+	<item>长号</item>
+	<item>大号</item>
+	<item>加弱音器小号</item>
+	<item>法国号（圆号）</item>
+	<item>铜管组（铜管乐器合奏音色）</item>
+	<item>合成铜管音色1</item>
+	<item>合成铜管音色2</item>
+	<item>高音萨克斯风</item>
+	<item>次中音萨克斯风</item>
+	<item>中音萨克斯风</item>
+	<item>低音萨克斯风</item>
+	<item>双簧管</item>
+	<item>英国管</item>
+	<item>巴松（大管）</item>
+	<item>单簧管（黑管）</item>
+	<item>短笛</item>
+	<item>长笛</item>
+	<item>竖笛</item>
+	<item>排箫</item>
+	<item>Blown Bottle</item>
+	<item>日本尺八</item>
+	<item>口哨声</item>
+	<item>陶笛</item>
+	<item>领奏1（方波）</item>
+	<item>领奏2（锯齿波）</item>
+	<item>领奏3</item>
+	<item>领奏4</item>
+	<item>领奏5</item>
+	<item>领奏6（人声）</item>
+	<item>领奏7（平行五度）</item>
+	<item>领奏8（贝司加主音）</item>
+	<item>背景1（新世纪）</item>
+	<item>背景2（温暖的）</item>
+	<item>背景3（复合合成）</item>
+	<item>背景4（唱诗班）</item>
+	<item>背景5（弓弦音色）</item>
+	<item>背景6（金属音色）</item>
+	<item>背景7（光环音色）</item>
+	<item>背景8（扫掠音色）</item>
+	<item>合成效果1（雨声）</item>
+	<item>合成效果2（音轨）</item>
+	<item>合成效果3（水晶）</item>
+	<item>合成效果4（大气）</item>
+	<item>合成效果5（明亮）</item>
+	<item>合成效果6（鬼怪）</item>
+	<item>合成效果7（回声）</item>
+	<item>合成效果8（科幻）</item>
+	<item>西塔尔琴</item>
+	<item>班卓琴</item>
+	<item>三味线</item>
+	<item>十三弦筝</item>
+	<item>卡林巴钟琴</item>
+	<item>苏格兰风笛</item>
+	<item>古提琴</item>
+	<item>唢呐</item>
+	<item>叮当铃</item>
+	<item>阿哥哥鼓</item>
+	<item>钢鼓</item>
+	<item>木鱼</item>
+	<item>太鼓</item>
+	<item>古式高音鼓</item>
+	<item>合成鼓</item>
+	<item>钹</item>
+	<item>磨弦声</item>
+	<item>呼吸声</item>
+	<item>海浪声</item>
+	<item>鸟鸣声</item>
+	<item>电话铃声</item>
+	<item>直升机声</item>
+	<item>拍手声</item>
+	<item>枪声</item>
+	<item>打击乐</item>
+	</string-array>
+    
+    
+    <string-array name="color_schemes">
+        <item>黑色（默认）</item>
+        <item>竹青色</item>
+        <item>胭脂色</item>
+        <item>苍色</item>
+        <item>大漠</item>
+    </string-array>
+    
+     
+    <string-array name="gauge_names">
+        <item>什么也不标识</item>
+        <item>最后五次回答是否正确</item>
+        <item>在问答中出现的次数</item>
+        <item>回答正确率</item>
+        <item>正确回答所需时间</item>
+        <item>有效正确回答所需时间</item>
+        <item>掌握程度</item>
+    </string-array>
+    
+    
+    <string-array name="btnrow1_labels">
+        <item>25%</item>
+        <item>50%</item>
+        <item>75%</item>
+        <item>100%</item>
+    </string-array>
+    
+    <string-array name="btnrow2_labels">
+        <item>用时</item>
+        <item>准确率</item>
+        <item>掌握程度</item>
+    </string-array>
+    
+    <string-array name="btnrow3_labels">
+        <item>时间</item>
+        <item>次数</item>
+    </string-array>
+    
+</resources>

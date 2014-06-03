@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#737373"
+        >
+
+<com.quadpixels.midisheetmusicmemo.SquareLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/intro_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/intro0"
+    android:gravity="center"
+    android:orientation="vertical" >
+
+        
+	    <Button
+	        android:id="@+id/choose_song"
+	        android:text="@string/choose_song"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:minWidth="96dp"
+	        android:gravity="center"
+	        android:textSize="24sp"
+	        android:textStyle="bold"
+	    />
+	
+	    <Button
+	        android:id="@+id/button_help"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:minWidth="96dp"
+	        android:layout_margin="5dp"
+	        android:text="@string/help_str" />
+
+	    <CheckBox
+	        android:id="@+id/checkBox1"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:textColor="#FFFFFF"
+	        android:padding="5dp"
+	        android:text="@string/load_original_msm" />
+
+	    <CheckBox
+	        android:id="@+id/checkBox2"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:checked="true"
+	        android:text="Use Fast Renderng Method"
+	        android:visibility="gone" />
+
+	    <CheckBox
+	        android:id="@+id/checkBox3"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:checked="false"
+	        android:text="DEBUG INFO"
+	        android:visibility="gone" />
+
+	    <Button
+	        android:id="@+id/reset_readme"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="Reset Readme"
+	        android:visibility="gone" />
+	    
+	    </com.quadpixels.midisheetmusicmemo.SquareLinearLayout>
+	    
+
+    </LinearLayout>

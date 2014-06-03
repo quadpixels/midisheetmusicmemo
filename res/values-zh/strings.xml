@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">梳打五线谱</string>
+    <string name="choose_song">选择MIDI文件</string>
+    <string name="song_settings_str">演奏和显示设定</string>
+    <string name="save_images_str">另存为图片</string>
+    <string name="save_images_descr_str">将当前歌曲以图片保存在 /Pictures/MidiSheetMusic 中，且以以下所示为文件名</string>
+    <string name="help_str">帮助</string>
+    <string name="sheet_prefs_title">乐谱设定</string>
+    <string name="restore_defaults">恢复默认设定</string>
+    <string name="select_tracks_to_display">显示的音轨</string>
+    <string name="select_tracks_to_mute">静音的音轨</string>
+    <string name="select_instruments_per_track">设置音轨音色</string>
+    <string name="set_all_to_piano">将所有音轨的音色重置为钢琴</string>
+    <string name="scroll_vertically">垂直滚屏</string>
+    <string name="show_piano">显示琴键</string>
+    <string name="show_lyrics">显示歌词</string>
+    <string name="show_note_letters">显示音名</string>
+    <string name="combine_to_two_staffs">合并为两个谱号</string>
+    <string name="combine_to_two_staffs_summary">将所有音轨合并为高音谱和低音谱</string>
+    <string name="split_to_two_staffs">分割为两个谱号</string>
+    <string name="split_to_two_staffs_summary">将单个音轨分为高音谱和低音谱</string>
+    <string name="transpose">移调</string>
+    <string name="key_signature">调号</string>
+    <string name="time_signature">拍号</string>
+    <string name="combine_interval">合并间距</string>
+    <string name="combine_interval_summary">如果有一些音符之间的间距在合并间距以内（单位为毫秒），就会被合成为一个和弦。</string>
+    <string name="right_hand_color">右手音符颜色</string>
+    <string name="left_hand_color">手音符颜色</string>
+    <string name="show_measures">显示小节号</string>
+    <string name="play_measures_in_loop_title">循环的小节设置</string>
+    <string name="play_measures_in_loop">是否指定范围内循环播放</string>
+    <string name="play_measures_in_loop_start">循环开始小节数</string>
+    <string name="play_measures_in_loop_end">循环结束小节数</string>
+    <string name="scan_button_title">扫描SD卡中的MIDI文件</string>
+    <string name="scan_files_str">扫描MIDI文件</string>
+    <string name="browse_files_str">浏览MIDI文件</string>
+    
+    <string name="num_play_and_quiz">%1$d次播放，%2$d次填空</string>
+    <string name="last_played_date">最后问答：%1$s</string>
+    <string name="stats_empty">当完成一次填空时，统计信息就会出现在这里。</string>
+    
+    <string name="difficulty_1">25％空白</string>
+    <string name="difficulty_2">50％空白</string>
+    <string name="difficulty_3">75％空白</string>
+    <string name="difficulty_4">全部空白</string>
+    
+    <string name="please_make_a_choice">请从以下选项中选一个</string>
+    <string name="well_done">完成了！</string>
+    <string name="tiles_to_go">个空白还没填好</string>
+    
+    <string name="intro_button2">开始填空</string>
+    <string name="error_no_tracks_selected">请打开选项并至少显示一个谱号。</string>
+    <string name="bitmap_loading">～努力加载中～</string>
+    
+    <string name="x_begin">最早</string>
+    <string name="x_end">最近</string>
+    <string name="zoom_in">放大</string>
+    <string name="zoom_out">缩小</string>
+    
+    <string name="select_color_scheme">请点选一个颜色主题</string>
+    <string name="select_gauge">请选择覆盖于小节之上的颜色标识</string>
+    <string name="load_original_msm">启动原版MidiSheetMusic</string>
+    <string name="playback_speed">回放速度</string>
+    
+    <string name="help21">谱子可上下滑动。长按一个小节开始播放，播放时单击任何一处停止播放。</string>
+    <string name="help22">滑到下面一点就会出现底部工具条，可以控制谱子的显示、覆盖层和播放速度。</string>
+    <string name="help23">这个区域显示这个谱子的各种统计信息。上面的按钮可控制数据的呈现方式。</string>
+    <string name="help12">按此开始填空模式。</string>
+    <string name="help31">这个区域会显示挖了空格的谱子。谱子可左右滑动。连点三次可放大／缩小。</string>
+    <string name="help32">点这个区域可以选择难度，选完难度之后点选谱子小块来作答。</string>
+    
+    
+    <string name="label_reset_readme">重置提示屏幕</string>
+    <string name="readme_html_file">file:///android_asset/readme_chs.html</string>
+    <string name="reset_readme">己重置提示屏幕</string>
+    
+    <string name="reset_statistics_cat">统计信息管理</string>
+    <string name="reset_mastery_pref">归零统计信息和掌握程度</string>
+    <string name="reset_click_count">想要清零就连按七次</string>
+    <string name="reset_mastery_done">统计信息和掌握程度己清零</string>
+    
+    
+    <plurals name="num_days">
+        <item quantity="other">%d天</item>
+    </plurals>
+    <plurals name="num_hours">
+        <item quantity="other">%d时</item>
+    </plurals>
+    <plurals name="num_minutes">
+        <item quantity="other">%d分</item>
+    </plurals>
+    <plurals name="num_seconds">
+        <item quantity="other">%d秒</item>
+    </plurals>
+    <string name="num_less_1min">小于1分钟</string>
+    
+    
+    <string name="no_quiz_data_query_found">没有找到属指定难度的填空记录</string>
+</resources>

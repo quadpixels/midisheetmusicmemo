@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.saltinemidisheetmusic"
+      android:versionCode="9"
+      android:versionName="2.6">
+    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="10" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <application android:icon="@drawable/icon" android:label="@string/app_name">
+        <activity android:name="com.saltinemidisheetmusic.MidiSheetMusicActivity"
+                  android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="com.saltinemidisheetmusic.ChooseSongActivity" >
+        </activity>
+        <activity android:name="com.saltinemidisheetmusic.FileBrowserActivity" >
+        </activity>
+        <activity android:name="com.saltinemidisheetmusic.AllSongsActivity" >
+        </activity>
+        <activity android:name="com.saltinemidisheetmusic.RecentSongsActivity" >
+        </activity>
+        <activity android:name="com.saltinemidisheetmusic.SettingsActivity" >
+        </activity>
+        <activity android:name="com.saltinemidisheetmusic.HelpActivity" >
+        </activity>
+        <activity android:name="com.quadpixels.midisheetmusicmemo.TestActivity" >
+        </activity>
+        <activity android:name="com.quadpixels.midisheetmusicmemo.TommyIntroActivity"
+            android:hardwareAccelerated="true" >
+        </activity>
+        <activity android:name="com.quadpixels.midisheetmusicmemo.TommyView2ActivityActivity"
+            android:hardwareAccelerated="true" >
+        </activity>
+        <activity android:name="com.saltinemidisheetmusic.SheetMusicActivity" 
+                  android:screenOrientation="landscape"
+                  android:configChanges="orientation">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file"  android:host="*" android:pathPattern=".*\\.mid" android:mimeType="*/*"  />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
