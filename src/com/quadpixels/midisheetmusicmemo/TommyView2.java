@@ -52,6 +52,7 @@ public class TommyView2 extends View implements Runnable {
 	// Some constants
 	String difficulty_1, difficulty_2, difficulty_3, difficulty_4;
 	String please_make_a_choice, well_done, tiles_to_go;
+	String str_quiz_tiles_to_go, str_quiz_seconds, str_quiz_num_clicks, str_quiz_measures;
 	
 	private static SheetMusic sheet1;
 	MidiOptions options;
@@ -1379,17 +1380,17 @@ public class TommyView2 extends View implements Runnable {
 						paint.setTextScaleX(1.0f);
 						y1 = y1 + src.bottom - src.top;
 						
-						s = String.format("%d measures", num_measures);
+						s = String.format(str_quiz_measures, num_measures);
 						paint.getTextBounds(s, 0, s.length(), src);
 						c.drawText(s, intro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
 						y1 = y1 + src.bottom - src.top;
 
-						s = String.format("%.1f seconds", seconds_elapsed);
+						s = String.format(str_quiz_seconds, seconds_elapsed);
 						paint.getTextBounds(s, 0, s.length(), src);
 						c.drawText(s, intro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
 						y1 = y1 + src.bottom - src.top;
 
-						s = String.format("%d/%d clicks", num_right_clicks, num_wrong_clicks);
+						s = String.format(str_quiz_num_clicks, num_right_clicks, num_wrong_clicks);
 						paint.getTextBounds(s, 0, s.length(), src);
 						c.drawText(s, intro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
 					}
@@ -1405,7 +1406,7 @@ public class TommyView2 extends View implements Runnable {
 					int y1 = y + pad + (int)(12*density);
 					String s;
 					if(game_state == GameState.PLAYING) {
-						s = String.format("%d/%d", num_tiles_total, num_tiles_hidden) + tiles_to_go;
+						s = String.format(str_quiz_tiles_to_go, num_tiles_total, num_tiles_hidden);
 					} else if(game_state == GameState.NOT_STARTED) {
 						s = please_make_a_choice;
 					} else {
@@ -1416,12 +1417,12 @@ public class TommyView2 extends View implements Runnable {
 					c.drawText(s, outro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
 					y1 = y1 + src.bottom - src.top;
 					
-					s = String.format("%.1f seconds", seconds_elapsed);
+					s = String.format(str_quiz_seconds, seconds_elapsed);
 					paint.getTextBounds(s, 0, s.length(), src);
 					c.drawText(s, outro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
 					y1 = y1 + src.bottom - src.top;
 					
-					s = String.format("%d/%d clicks", num_right_clicks, num_wrong_clicks);
+					s = String.format(str_quiz_num_clicks, num_right_clicks, num_wrong_clicks);
 					c.drawText(s, outro_x0 + pad, y1 + (src.bottom-src.top)/2, paint);
 					
 				}
@@ -2050,6 +2051,10 @@ public class TommyView2 extends View implements Runnable {
 		difficulty_2 = context.getResources().getString(R.string.difficulty_2);
 		difficulty_3 = context.getResources().getString(R.string.difficulty_3);
 		difficulty_4 = context.getResources().getString(R.string.difficulty_4);
+		str_quiz_num_clicks = context.getResources().getString(R.string.quiz_num_clicks);
+		str_quiz_seconds    = context.getResources().getString(R.string.quiz_seconds);
+		str_quiz_tiles_to_go= context.getResources().getString(R.string.quiz_tiles_to_go);
+		str_quiz_measures   = context.getResources().getString(R.string.quiz_measures);
 		please_make_a_choice = context.getResources().getString(R.string.please_make_a_choice);
 		well_done = context.getResources().getString(R.string.well_done);
 		midi_data = _data; midi_title = _title; options = _options; midi_uri_string = _midi_uri_string;
@@ -2077,7 +2082,6 @@ public class TommyView2 extends View implements Runnable {
 		int NT = sheet.getActualNumberOfTracks();
 		{
 			String quiz_stat_sz = prefs_quizstats.getString(cksm, "");
-			Log.v("TommyIntroView", "quiz_stat_sz="+quiz_stat_sz+", NT="+NT);
 			TommyConfig.populateQuizCoarseStatisticsFromJSONString(NT, num_measures, right_clicks_measures, wrong_clicks_measures,
 				delays_measures, quiz_stat_sz);
 			sheet.getVisibleActualTrackIndices(actual_track_idx);

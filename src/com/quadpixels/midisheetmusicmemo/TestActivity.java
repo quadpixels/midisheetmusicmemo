@@ -1,8 +1,6 @@
 package com.quadpixels.midisheetmusicmemo;
 
 import com.midisheetmusicmemo.R;
-import com.midisheetmusicmemo.R.layout;
-
 import android.app.Activity;
 import android.os.Bundle;
 

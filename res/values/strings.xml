@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Saltine Sheet Music</string>
+    <string name="app_name">MidiSheetMusic Memo</string>
     <string name="choose_song">Choose Song</string>
     <string name="song_settings_str">Song Settings</string>
     <string name="save_images_str">Save As Images</string>
@@ -100,4 +100,9 @@
     
     <string name="no_quiz_data_query_found">No quiz record of the specified difficulty level(s) is found.</string>
     
+    
+    <string name="quiz_num_clicks">%1$d / %2$d clicks</string>
+    <string name="quiz_seconds">%1$.1f seconds</string>
+    <string name="quiz_measures">%1$d measures</string>
+    <string name="quiz_tiles_to_go">%1$d / %2$d tiles to go</string>
 </resources>

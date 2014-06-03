@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">梳打五线谱</string>
+    <string name="app_name">爱背谱</string>
     <string name="choose_song">选择MIDI文件</string>
     <string name="song_settings_str">演奏和显示设定</string>
     <string name="save_images_str">另存为图片</string>
@@ -37,7 +37,7 @@
     <string name="browse_files_str">浏览MIDI文件</string>
     
     <string name="num_play_and_quiz">%1$d次播放，%2$d次填空</string>
-    <string name="last_played_date">最后问答：%1$s</string>
+    <string name="last_played_date">最后填空：%1$s</string>
     <string name="stats_empty">当完成一次填空时，统计信息就会出现在这里。</string>
     
     <string name="difficulty_1">25％空白</string>
@@ -95,6 +95,9 @@
     </plurals>
     <string name="num_less_1min">小于1分钟</string>
     
-    
     <string name="no_quiz_data_query_found">没有找到属指定难度的填空记录</string>
+    <string name="quiz_num_clicks">%1$d次点对，%2$d次点错</string>
+    <string name="quiz_seconds">用时%1$.1f秒</string>
+    <string name="quiz_measures">%1$d个小节</string>
+    <string name="quiz_tiles_to_go">还剩%1$d / %2$d块</string>
 </resources>
