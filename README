@@ -1,0 +1,33 @@
+MidiSheetMusicMemo／爱背谱
+
+This application is built on MidiSheetMusic and is aimed at helping memorizing sheet music.
+
+Feature List:
+- The app revolves keeping track of memorization progress in a quantitative way by breaking a sheet music into tiles (measures in staffs).
+- Two modes: Quiz Mode and Sheet Music Mode.
+- Quiz Mode came out first and Sheet Music Mode was a revamped user interface for MidiSheetMusic with a new matching visual style.
+- Visualization of Quiz Mode statistics in overview and in detail (at individual tiles).
+- Supports screen orientation change.
+- Smooth 60FPS scrolling (on my AT&T HTC One X (Evita)).
+- Multiple color themes that can also work as file list bookmarks.
+- Select which staffs to play (same as MidiSheetMusic) and appear in Quiz Mode.
+- Zoom in/zoom out in Quiz Mode and Sheet Music Mode
+- Split 1 staff to 2 staffs, or combine >2 staffs to 2 staffs (same as MidiSheetMusic)
+- MIDI playback with adjustable speed, instrument with the current notes being highlighted (same as MidiSheetMusic)
+- Click a measure and play from that measure.
+
+==========================================================================================
+中文版
+- 把MIDI文件放到手机／平板上就可以用了。
+- 中心点是把乐谱分成小节再分成小块，用选择填空的方式辅助记忆。
+- 中文和英文界面
+- 两种操作方式：填空模式 和 乐谱模式。.
+- 显示填空模式的总体统计数据（整张乐谱）和详细统计数据（每个小块）。
+- 支持屏幕旋转。
+- 60帧／秒流畅显示（用AT&T HTC One X (Evita)测得）。
+- 多种色彩主题，兼作彩色书签用。
+- 可选要显示、播放、以及在填空模式中出现中的声部。（同MidiSheetMusic）
+- 在乐谱模式和填空模式中皆可放大缩小。
+- 可将单声部的乐谱分解成两个声部，或将多声部的乐谱合并为两个声部（同MidiSheetMusic）。
+- 可调整播放速度、音色。可显示目前正播放的音符的位置。（同MidiSheetMusic）
+- 点选一个小节开始播放。
