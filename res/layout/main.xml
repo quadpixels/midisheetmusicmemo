@@ -62,11 +62,11 @@
 	        android:visibility="gone" />
 
 	    <Button
-	        android:id="@+id/reset_readme"
+	        android:id="@+id/testbutton"
 	        style="?android:attr/buttonStyleSmall"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
-	        android:text="Reset Readme"
+	        android:text="List SharedPreferences"
 	        android:visibility="gone" />
 	    
 	    </com.quadpixels.midisheetmusicmemo.SquareLinearLayout>

@@ -13,6 +13,7 @@
 package com.midisheetmusicmemo;
 
 import com.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo.TestActivity;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -41,6 +42,7 @@ public class MidiSheetMusicActivity extends Activity {
 	private CheckBox cb, cb2, cb3;
     LinearLayout intro_container;
     SharedPreferences prefs_readme;
+    Button btn_test;
     
     long last_click_millis;
     int num_click;
@@ -78,6 +80,7 @@ public class MidiSheetMusicActivity extends Activity {
 						cb.setVisibility(View.VISIBLE);
 						cb2.setVisibility(View.VISIBLE);
 						cb3.setVisibility(View.VISIBLE);
+						btn_test.setVisibility(View.VISIBLE);
 					}
 					last_click_millis = millis;
 				}
@@ -128,11 +131,12 @@ public class MidiSheetMusicActivity extends Activity {
 			}
 		});
         
-        Button btn_reset_readme = (Button)findViewById(R.id.reset_readme);
-        btn_reset_readme.setOnClickListener(new View.OnClickListener() {
+        btn_test = (Button)findViewById(R.id.testbutton);
+        btn_test.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				resetQuickReadme();
+				Intent intent = new Intent(getApplicationContext(), TestActivity.class);
+				startActivity(intent);
 			}
 		});
     }

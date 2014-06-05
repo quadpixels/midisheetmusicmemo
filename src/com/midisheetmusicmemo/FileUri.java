@@ -54,7 +54,7 @@ public class FileUri implements Comparator<FileUri> {
     }
     
     public String toStringFull() {
-    	return uri.getLastPathSegment() + displayName;
+    	return uri.toString() + displayName; // Huge change on 2014-06-03
     }
 
     /** Return true if this is a directory */

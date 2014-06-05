@@ -63,7 +63,8 @@ public class TommyView2 extends View implements Runnable {
 	Random rnd = new Random();
 	boolean is_inited = false,
 			is_ui_created = false;
-	long elapsed_millis, last_redraw_millis;
+	long elapsed_millis, last_redraw_millis, 
+		superflash_end_millis = 0; // To congratulate your finishing
 	
 	int AREA1_HGT, AREA1_bitmap_hgt0; // Recycling Area Height
 	int width, height;
@@ -71,8 +72,7 @@ public class TommyView2 extends View implements Runnable {
 	int curr_layout_id;
 	float blanks_ratio = 0.5f;
 	int frame_count = 0;
-	final int FRAME_DELAY = 17;
-	
+	final int FRAME_DELAY = 17, SUPERFLASH_LENGTH = 1000;
 	int BITMAP_MEM_BUDGET = 0;
 	long last_heap_memory_alloc = 0;
 	
@@ -444,7 +444,7 @@ public class TommyView2 extends View implements Runnable {
 	void advanceHighlightedStaffMeasureIdx() {
 		measures_status.get(curr_hl_staff).set(curr_hl_measure, MeasureStatus.IN_ANIMATION);
 		num_tiles_hidden --;
-		Log.v("Advance", String.format("num_tiles_hidden=%d", num_tiles_hidden));
+//		Log.v("Advance", String.format("num_tiles_hidden=%d", num_tiles_hidden));
 		if(num_tiles_hidden > 0) {
 			getFirstHighlightStaffMeasure();
 			Log.v("advance", String.format("measure %d", curr_hl_measure));
@@ -455,6 +455,8 @@ public class TommyView2 extends View implements Runnable {
 			if(MidiSheetMusicActivity.DEBUG) {
 				Toast.makeText(ctx, "Game finished! Congrats!", Toast.LENGTH_LONG).show();
 			}
+			superflash_end_millis = System.currentTimeMillis() + SUPERFLASH_LENGTH;
+			need_redraw = true;
 			game_state = GameState.FINISHED;
 			SharedPreferences.Editor editor = prefs_highscores.edit();
 			SharedPreferences.Editor editor_playcount = prefs_quizcount.edit();
@@ -1662,7 +1664,7 @@ public class TommyView2 extends View implements Runnable {
 		// 2 times the num of pixels * color depth (16b)
 		BITMAP_MEM_BUDGET = (int)(2 * 2 *width * height * (1.0f*AREA1_bitmap_hgt0 / AREA1_HGT));
 		recycle_area.computeXPositions();
-		recycle_area.setXPositionToLeftMost();
+//		recycle_area.setXPositionToLeftMost();
 		separator = new FloatingButton(width, (int)(SEPARATOR_HEIGHT*density), 0, height/3,
 				FloatingButtonType.SEPARATOR);
 		float separator_hgt = SEPARATOR_HEIGHT*density;
@@ -1744,7 +1746,7 @@ public class TommyView2 extends View implements Runnable {
 		recycle_area = new RecycleArea(width, (int)(AREA1_HGT)); //, AREA1_zoom_x, AREA1_zoom_y);
 		BITMAP_MEM_BUDGET = (int)(2 * 2 * width * height * (1.0f*AREA1_bitmap_hgt0 / AREA1_HGT));
 		recycle_area.computeXPositions();
-		recycle_area.setXPositionToLeftMost();
+//		recycle_area.setXPositionToLeftMost();
 		float separator_hgt = SEPARATOR_HEIGHT*density;
 		
 		int btn_thickness = (int)(NAVIGATION_BUTTON_WIDTH * density);
@@ -2143,6 +2145,7 @@ public class TommyView2 extends View implements Runnable {
 	}
 	
 	private void do_draw(Canvas c) {
+		long millis = System.currentTimeMillis();
 		frame_count ++;
 		c.drawColor(TommyConfig.getCurrentStyle().background_color);
 		int w = this.getWidth();
@@ -2157,6 +2160,26 @@ public class TommyView2 extends View implements Runnable {
 		
 		synchronized(tiles_in_animation) {
 			for(TileInAnimation tia : tiles_in_animation) tia.draw(c);
+		}
+		
+		// Super flash!!!!
+		boolean is_flash_done = true;
+		if(millis < superflash_end_millis) {
+			is_flash_done = false;
+			synchronized (paint) {
+				float completion = (superflash_end_millis - millis) * 1.0f /
+					SUPERFLASH_LENGTH;
+				if(completion < 0) completion = 0;
+				if(completion > 1) completion = 1;
+				paint.setColor(Color.WHITE);
+				paint.setStyle(Style.FILL);
+				paint.setAlpha((int)(255*completion));
+				c.drawRect(0, 0, width, height, paint);
+				paint.setAlpha(255);
+			}
+		}
+		if(last_redraw_millis <= superflash_end_millis && millis >= superflash_end_millis) {
+			is_flash_done = false;
 		}
 		
 		if(MidiSheetMusicActivity.DEBUG)
@@ -2174,6 +2197,11 @@ public class TommyView2 extends View implements Runnable {
 					);
 			c.drawText(x, w/2, 12*density, paint);
 		}
+		
+		if(is_flash_done == false) {
+			recycle_area.need_redraw = true;
+		}
+		
 		need_redraw = false;
 	}
 	
@@ -2368,12 +2396,9 @@ public class TommyView2 extends View implements Runnable {
 	private void onMeasureOrSurfaceCreated() {
 		if(is_ui_created) return;
 		is_ui_created = true;
-		Log.v("TommyView2 surface Created", "W="+width+", H="+height);
+		
 		initUI();
 		recycle_area.setScoreXOffset(recycle_area_score_x_offset);
-//		if(!is_inited) {
-	//		initGamePlay();
-	//	}
 		if(game_state == GameState.PLAYING) { // Restoring from a game 
 			populateSelectionTiles();
 		}

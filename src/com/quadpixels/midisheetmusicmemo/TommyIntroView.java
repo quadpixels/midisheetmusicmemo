@@ -324,7 +324,7 @@ public class TommyIntroView extends View implements Runnable {
 		MeasureTile ret = null;
 		for(int i=0; i<measure_tiles.size(); i++) {
 			MeasureTile mt = measure_tiles.get(i);
-			if(mt.staff_idx == 0 && mt.y <= y_offset && mt.y + mt.H >= y_offset) {
+			if(/*mt.staff_idx == 0 && */mt.y <= y_offset && mt.y + mt.H >= y_offset) {
 				if(mt.y < min_y) {
 				 ret = mt;
 				 min_y = mt.y;
@@ -1766,13 +1766,19 @@ public class TommyIntroView extends View implements Runnable {
 						paint.setTextSize(10*density);
 						paint.setStyle(Style.FILL);
 						paint.setTextAlign(Align.CENTER);
+						float scalex = 1.0f;
 						String txt;
 						if(buttons_labels[i] != null) {
 							txt = buttons_labels[i];
 						} else txt = curr_gauge_label;
+						float txt_w = paint.measureText(txt);
+						if(txt_w > buttons_w[i]) {
+							scalex = 1.0f * buttons_w[i] / txt_w; 
+						}
+						paint.setTextScaleX(scalex);
 						c.drawText(txt, buttons_x[i]+buttons_w[i]/2, 
 								y0+buttons_h[i]-H_button_indicator-paint.descent(), paint);
-						
+						paint.setTextScaleX(1.0f);
 					}
 					
 					if(btn_hl_idx == i) {
@@ -1924,8 +1930,11 @@ public class TommyIntroView extends View implements Runnable {
 		default: break;
 		}
 		
+		// Back up old y_offset, set new y_offset
 		if(is_show_sub_separators != last_show_subseps) {
+			MeasureTile mt = getFirstMeasureIntersectsTopOfScreen();
 			layout();
+			if(mt != null) setYOffset(mt.y);
 		}
 		
 		curr_gauge_label = TommyConfig.GAUGE_LABELS[mode.ordinal()];
@@ -1945,7 +1954,10 @@ public class TommyIntroView extends View implements Runnable {
 	// In and out params:
 	// idxes[0] is the idx of the first visible line. (on the top of the screen)
 	// idxes[1] is the idx of the first invisible line. (next to the bottom of the screen)
-	private void getFirstVisibleAndInvisibleLinesIdx(int[] idxes) {		
+	private void getFirstVisibleAndInvisibleLinesIdx(int[] idxes) {
+		// This function may be called even before initialization is complete.
+		// In that case, do nothing
+		if(button_panel == null) return;
 		int ymin = button_panel.y + button_panel.H - y_offset;
 		int ymax = ymin + height;
 		int first_visible_line_id = 0, y1 = ymin;

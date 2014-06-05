@@ -264,11 +264,11 @@
     
     <string-array name="gauge_names">
         <item>None</item>
-        <item>Last 5 Response Times</item>
+        <item>Last 5 Quiz Results</item>
         <item>Occurrences</item>
         <item>Accuracy</item>
-        <item>Overall Response Time</item>
-        <item>Effective Overall Response Time</item>
+        <item>Average Response Time</item>
+        <item>Effective Average Response Time</item>
         <item>Mastery Level</item>
     </string-array>
     
