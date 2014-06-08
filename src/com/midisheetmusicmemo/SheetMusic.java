@@ -1356,6 +1356,9 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     	paint.setStyle(Style.STROKE);
     	canvas.drawRect(xlim.x, ymin, xlim.y, ymax, paint);
     }
+    
+    // The bitmap being drawn in the background is cached
+    //   scaling to zoom_x and zoom_y
     public Bitmap RenderTile(int measure_idx, int staff_idx, float zoom_x, float zoom_y) {
     	synchronized(scratch) {
     		try{
@@ -1784,6 +1787,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 			    		paint.setAntiAlias(true);
 			    		c1.drawBitmap(scratch, 0, 0, paint);
 
+			    		if(MidiSheetMusicActivity.DEBUG)
 			    		{ // Draws debug information on tile
 				    		c1.drawText(String.format("%dx%d", W, H), 0, 14, paint);
 				    		c1.drawText(String.format("pad %f", this_pad), 0, 28, paint);

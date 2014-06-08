@@ -2586,7 +2586,7 @@ public class TommyIntroView extends View implements Runnable {
 			yOffsetInertia();
 			updateAutoScrollY(millis);
 			
-			if(sheet != null) {
+			if(sheet != null && parent != null && parent.player != null) {
 				if(parent.player.getPlaystate() == parent.player.stopped) {
 					curr_sheet_playing_measure_idx = -1;
 					need_redraw = true;
@@ -2833,6 +2833,7 @@ public class TommyIntroView extends View implements Runnable {
 		bitmap_helper.free();
 		measure_tiles.clear();
 		float zoom = width * 1.0f / LINE_WIDTHS[line_width_idx];
+		bitmap_helper.bitmap_zoom = zoom;
 		int x = 0, x0 = 0;
 		int sep_h_minor = (int)(MINOR_SEPARATOR_HEIGHTS[line_width_idx] * density);
 		

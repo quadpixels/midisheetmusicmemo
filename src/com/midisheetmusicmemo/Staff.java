@@ -480,9 +480,8 @@ public class Staff {
     public SheetMusic.Vec2 DrawMeasure(Canvas canvas, int measureIdx, Paint paint, boolean is_clef,
     		float total_x_padding) {
     	Vec2 ret = new Vec2();
-    	int idx_start = barSymbolIdxes.get(measureIdx);
     	paint.setColor(Color.BLACK);
-    	float xmin = 0, xmax = 0, ymin = 0, ymax = 0;
+    	float xmin = 0, xmax = 0;
 //    	Draw(canvas, r, paint);
     	
     	// Draw something myself.
@@ -541,7 +540,7 @@ public class Staff {
     	return ret;
     }
 
-    // TOMMY: The Index of the notes in the give time.
+    // TOMMY: The Index of the notes in the given time.
     // Tommy (On 2014-05-03)
     // The BarSymbol may be causing some glitches?
     public int shade_measure_idx = 0;

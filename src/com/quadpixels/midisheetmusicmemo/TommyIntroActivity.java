@@ -24,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.midisheetmusicmemo.ChooseSongActivity;
+import com.midisheetmusicmemo.ClefSymbol;
 import com.midisheetmusicmemo.MidiFile;
 import com.midisheetmusicmemo.MidiOptions;
 import com.midisheetmusicmemo.MidiPlayer;
@@ -32,6 +33,7 @@ import com.midisheetmusicmemo.R;
 import com.midisheetmusicmemo.SettingsActivity;
 import com.midisheetmusicmemo.SheetMusic;
 import com.midisheetmusicmemo.SheetMusicActivity;
+import com.midisheetmusicmemo.TimeSigSymbol;
 import com.quadpixels.midisheetmusicmemo.TommyPopupView.HelpInfos;
 
 // 2014-03-14 Currently rotating screen stops music (the user has to restart it) 
@@ -62,8 +64,13 @@ public class TommyIntroActivity extends Activity {
 	
 	public void onCreate(Bundle _bundle) {
 		super.onCreate(_bundle);
+        
 		bundle = _bundle;
 		ctx = getApplicationContext();
+
+        ClefSymbol.LoadImages(ctx);
+        TimeSigSymbol.LoadImages(ctx);
+        MidiPlayer.LoadImages(ctx);
 		
 		prefs_colorscheme  = ctx.getSharedPreferences("colorscheme", Context.MODE_PRIVATE);
 		prefs_readme       = ctx.getSharedPreferences("readme", Context.MODE_PRIVATE);
