@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import com.midisheetmusicmemo.MidiFile;
 import com.midisheetmusicmemo.MidiOptions;
+import com.midisheetmusicmemo.MidiSheetMusicActivity;
 import com.midisheetmusicmemo.SheetMusicActivity;
 import com.quadpixels.midisheetmusicmemo.TommyPopupView.HelpInfos;
 
@@ -27,6 +28,7 @@ public class TommyView2Activity extends Activity {
 	MidiOptions options;
 	SharedPreferences prefs_readme;
 	static TommyPopupView popupview;
+	Bundle bundle;
 	
 	protected void onCreate (Bundle savedInstanceState) {
 		Log.v("TommyView2Activity", "onCreate called");
@@ -70,7 +72,9 @@ public class TommyView2Activity extends Activity {
 		setContentView(relative_layout);
 		
         ActivityManager activityManager = (ActivityManager) getApplicationContext().getSystemService(ACTIVITY_SERVICE);
-		Toast.makeText(this, "Heap="+activityManager.getMemoryClass(), Toast.LENGTH_SHORT).show();
+        if(MidiSheetMusicActivity.DEBUG) {
+        	Toast.makeText(this, "Heap="+activityManager.getMemoryClass(), Toast.LENGTH_SHORT).show();
+        }
 	}
 	
 	protected void onDestroy() {
@@ -82,14 +86,31 @@ public class TommyView2Activity extends Activity {
 		}
 	}
 	
-	protected void onStart() { // Resuming from alt+tab
-		super.onStart();
-		if(tommyview != null)
+	protected void onStop() {
+		super.onStop();
+		Log.v("TommyView2Activity", "onStop called");
+		if(tommyview != null) {
+			tommyview.pause();
+		}
+	}
+	
+	protected void onRestart() {
+		super.onRestart();
+		Log.v("TommyView2Activity", "onStart called");
+		if(tommyview != null) {
+			if(this.bundle != null) {
+				tommyview.loadState(this.bundle);
+				this.bundle.clear();
+				this.bundle = null;
+			}
 			tommyview.resume();
+			tommyview.populateSelectionTiles();
+		}
 	}
 	
 	protected void onSaveInstanceState(Bundle bundle) {
 		Log.v("TommyView2Activity", "onSaveInstanceState called");
 		tommyview.saveState(bundle);
+		this.bundle = bundle;
 	}
 }

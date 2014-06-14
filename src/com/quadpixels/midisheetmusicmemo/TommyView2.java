@@ -46,6 +46,9 @@ import com.midisheetmusicmemo.SheetMusic.Vec2;
 // 2014-05-31: Bugfix: when moving the horizontal bar, recycle area would go out-of-bounds.
 // 2014-06-03: "Track" and "staff" are used interchangeably in this doc
 //             Added histograms to status load/save during orientation change
+// 2014-06-14: Fixed "minimize app and reopen app"
+
+// onCreate is called after an orientation change.
 
 public class TommyView2 extends View implements Runnable {
 	
@@ -64,7 +67,8 @@ public class TommyView2 extends View implements Runnable {
 	boolean is_inited = false,
 			is_ui_created = false;
 	long elapsed_millis, last_redraw_millis, 
-		superflash_end_millis = 0; // To congratulate your finishing
+		superflash_end_millis = 0, // To congratulate your finishing
+		last_millis = 0; // Last update millis
 	
 	int AREA1_HGT, AREA1_bitmap_hgt0; // Recycling Area Height
 	int width, height;
@@ -129,11 +133,17 @@ public class TommyView2 extends View implements Runnable {
 	boolean is_resizing_recycling_area = false;
 	
 	public void pause() {
-		is_running = false;
+		synchronized(this) {
+			is_running = false;
+			tiles_in_animation.clear();	
+		}
 	}
 	
 	public void resume() {
 		is_running = true;
+		last_millis = System.currentTimeMillis();
+		// Force redraw
+		for(SelectionTile st : tiles) { st.need_redraw = true; }
 	}
 	
 	String highScoreArrayToString(ArrayList<Long> x) {
@@ -169,8 +179,8 @@ public class TommyView2 extends View implements Runnable {
 	GameState game_state = GameState.NOT_STARTED;
 	
 	void saveState(Bundle bundle) {
-		for(int i=0; i<num_staffs; i++) {
-			for(int j=0; j<num_measures; j++) {
+		for(int j=0; j<num_measures; j++) {
+			for(int i=0; i<num_staffs; i++) {
 				MeasureStatus st = measures_status.get(i).get(j); 
 				if(st == MeasureStatus.IN_ANIMATION) {
 					st = MeasureStatus.IN_RECYCLE;
@@ -220,6 +230,7 @@ public class TommyView2 extends View implements Runnable {
 	
 	// A crazy smoke tester
 	// may rotate the screen 2147483647 times in 1 quiz, causing the program to crash! 
+	// Must not let that happen.
 	@SuppressWarnings("unchecked")
 	public void loadState(Bundle bundle) {
 		deck_uids = (ArrayList<ArrayList<Integer>>)bundle.getSerializable("deck_uids");
@@ -257,6 +268,7 @@ public class TommyView2 extends View implements Runnable {
 		mastery_histogram_after = bundle.getIntArray("mastery_histogram_after");
 		measure_mastery_states = (ArrayList<ArrayList<Integer>>) bundle.getSerializable("measure_mastery_states");
 		is_running = true;
+		Log.v("TommyView2", "loadState called");
 	}
 	
 
@@ -444,10 +456,9 @@ public class TommyView2 extends View implements Runnable {
 	void advanceHighlightedStaffMeasureIdx() {
 		measures_status.get(curr_hl_staff).set(curr_hl_measure, MeasureStatus.IN_ANIMATION);
 		num_tiles_hidden --;
-//		Log.v("Advance", String.format("num_tiles_hidden=%d", num_tiles_hidden));
 		if(num_tiles_hidden > 0) {
 			getFirstHighlightStaffMeasure();
-			Log.v("advance", String.format("measure %d", curr_hl_measure));
+			Log.v("advance", String.format("measure %d, #hidden=%d", curr_hl_measure, num_tiles_hidden));
 			if(recycle_area.isMeasureOutOfSight(curr_hl_measure)) {
 				recycle_area.centerAtMeasure(curr_hl_measure);
 			}
@@ -787,7 +798,7 @@ public class TommyView2 extends View implements Runnable {
 		public void draw(Canvas c) {
 			need_redraw = false;
 			if(!is_visible) return;
-			if(bmp != null) {
+			if(bmp != null && !bmp.isRecycled()) {
 				paint.setFilterBitmap(true);
 				int ddy = 0;
 				if(touchid != -1) ddy = (int)(4*density);
@@ -1300,6 +1311,26 @@ public class TommyView2 extends View implements Runnable {
 						bk.draw(c);
 						c.drawBitmap(bmp, src, dst, bmp_paint);
 					}
+				}
+				
+				{
+					switch(measures_status.get(idx_staff).get(idx_measure)) {
+					case HIDDEN:
+						paint.setColor(0xFFFF0000);
+						break;
+					case IN_ANIMATION:
+						paint.setColor(0xFF00FF00);
+						break;
+					case IN_RECYCLE:
+						paint.setColor(0xFF0000FF);
+						break;
+					case IN_SELECTION:
+						paint.setColor(0xFFFFFF00);
+						break;
+					default:
+						break;
+					}
+					c.drawRect(x+1, y+10, x+10, y+1, paint);
 				}
 				
 				idx_staff++;
@@ -1917,7 +1948,7 @@ public class TommyView2 extends View implements Runnable {
 		is_inited = true;
 	}
 	
-	private void populateSelectionTiles() {
+	public void populateSelectionTiles() {
 		Log.v("TommyView2::populateSlectionTiles", tiles.size()+" tiles");
 		for(SelectionTile st : tiles) {
 			st.setRandomHiddenMeasure();
@@ -2007,7 +2038,7 @@ public class TommyView2 extends View implements Runnable {
 		is_inited = true;
 	}
 	
-	private void initUI() {
+	public void initUI() {
 		Log.v("TommyView2::initUI", " W="+width + ", H="+height);
 		// Prepare U.I. Elements.
 		for(int i=0; i<touches.length; i++) touches[i] = new Vec2();
@@ -2107,7 +2138,6 @@ public class TommyView2 extends View implements Runnable {
 	public void run() {
 		while(!is_freed) {
 			if(is_running) {
-				long last_millis = 0;
 				while(true) {
 					try {
 						long curr_millis = System.currentTimeMillis();
@@ -2393,7 +2423,7 @@ public class TommyView2 extends View implements Runnable {
 		return true;
 	}
 	
-	private void onMeasureOrSurfaceCreated() {
+	public void onMeasureOrSurfaceCreated() {
 		if(is_ui_created) return;
 		is_ui_created = true;
 		

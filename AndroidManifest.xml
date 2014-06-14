@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.midisheetmusicmemo"
-      android:versionCode="10"
+      android:versionCode="11"
       android:versionName="0.9026">
     <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="10" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />

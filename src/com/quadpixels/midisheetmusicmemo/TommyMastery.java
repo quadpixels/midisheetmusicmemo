@@ -1,9 +1,10 @@
 package com.quadpixels.midisheetmusicmemo;
 
+import java.io.Serializable;
 import java.util.LinkedList;
 
 // Computes Mastery.
-public class TommyMastery {
+public class TommyMastery implements Serializable {
 
 	// Mastery Transition Table
 	//                  Right                 Right            Right
