@@ -37,7 +37,6 @@ import com.midisheetmusicmemo.TimeSigSymbol;
 import com.quadpixels.midisheetmusicmemo.TommyPopupView.HelpInfos;
 
 // 2014-03-14 Currently rotating screen stops music (the user has to restart it) 
-
 public class TommyIntroActivity extends Activity {
 	public static TommyPopupView popupview; 
 	TommyIntroView view;
@@ -46,11 +45,13 @@ public class TommyIntroActivity extends Activity {
 	byte[] midi_data;
 	String midi_title, midi_uri_string;
 	Context ctx;
-	MidiPlayer player;
+	
+	static MidiPlayer player;
+	static SheetMusic sheet0; // Retained through screen orientation change
+	
 	MidiOptions options;
 	MidiFile midi_file;
 	long midiCRC;
-	SheetMusic sheet0;
 	SharedPreferences prefs_colorscheme, prefs_readme;
 	int playcount, quizcount;
 	String error_no_tracks_selected;
@@ -129,8 +130,11 @@ public class TommyIntroActivity extends Activity {
 			relative_layout.addView(popupview);
 			popupview.view = this.view;
 		}
-		player = new MidiPlayer(this);
-		player.SetMidiFile(midi_file, options, view.sheet);
+		if(player == null) {
+			Log.v("TommyIntroActivity", "Recreated Player");
+			player = new MidiPlayer(this);
+			player.SetMidiFile(midi_file, options, view.sheet);
+		}
 	}
 	
 	public void stopMidiPlayer() {
@@ -182,6 +186,11 @@ public class TommyIntroActivity extends Activity {
 			System.gc();
 			ChooseSongActivity.logHeap();
 			finish();
+		}
+		if(view != null) {
+			view.free();
+			view.freeCache();
+			view = null;
 		}
 	}
 	
@@ -376,8 +385,9 @@ public class TommyIntroActivity extends Activity {
 					stopMidiPlayer();
 					flag1 = true;
 				}
-				if(midx >= 0) 
+				if(midx >= 0) {
 					player.MoveToMeasureBegin(midx);
+				}
 				if(flag1) startMidiPlayer();
 			}
 		};

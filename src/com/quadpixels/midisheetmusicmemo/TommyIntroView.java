@@ -9,6 +9,7 @@
 package com.quadpixels.midisheetmusicmemo;
 
 import java.util.ArrayList;
+import java.util.Currency;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -64,7 +65,9 @@ public class TommyIntroView extends View implements Runnable {
 	Context ctx;
 	private int BITMAP_MEMORY_BUDGET = 0;
 	private static final int TEXT_HEIGHT = 13;
-	boolean need_redraw, is_running, is_inited;
+	// is_restarting: true if just recovering from orientation change. This will refocus y_offset to
+	//   the currently-playing measure upon the next update() tick.
+	boolean need_redraw, is_running, is_inited, is_restarting; 
 	public SheetMusic sheet;
 	public MidiOptions options;
 	Bitmap state_transition_bmp = null;
@@ -85,18 +88,60 @@ public class TommyIntroView extends View implements Runnable {
 	private int preview_midx_min = -1, preview_midx_max = -1, preview_lidx = -1, preview_fade_duration = 0;
 	private int preview_fading_dir = 0;
 	private long preview_fade_until_millis = 0;
+	// Being crammed crammed means the screen is too short to show the entire next line,
+	//   and can only show a part of it.
+	private boolean preview_is_crammed = false; 
+	private int preview_xmax = -1;
 	private void fadeOutPreview(int delta_millis) {
+		Log.v("TommyIntroView", "fade out");
 		preview_fade_duration = delta_millis;
 		if(delta_millis == 0) {
 			preview_midx_min = preview_midx_max = preview_lidx = -1;
+			preview_fading_dir = 0;
 		} else {
 			preview_fading_dir = -1;
 			preview_fade_until_millis = System.currentTimeMillis() + delta_millis;
 		}
 	}
+	
+	private boolean isPreviewVisible() {
+		if(MidiSheetMusicActivity.USE_FAST_RENDERING_METHOD) {
+			if(preview_lidx != -1) return true; else return false;
+		} else {
+			if(preview_midx_max != -1 && preview_midx_min != -1) return true; else return false; 
+		}
+	}
+	
 	private void fadeInPreview(int delta_millis, int lidx, int midx_min, int midx_max) {
+		Log.v("TommyIntroView", "fade in");
 		preview_fade_duration = delta_millis;
 		preview_midx_min = midx_min; preview_midx_max = midx_max; preview_lidx = lidx;
+		
+		// Is crammed?
+		{
+			if(MidiSheetMusicActivity.USE_FAST_RENDERING_METHOD) {
+				int midx_vis_max = line_midx_start.get(lidx); // vis means visible
+				int midx_vis_min = (lidx > 0) ? 
+					line_midx_start.get(lidx - 1) : 0;
+				
+				preview_is_crammed = false;
+				// Compute Y limit
+				if(line_midx_start.size() > 1) {
+					MeasureTile mtvis1 = measure_tiles.get(
+						getTileUIDFromMidSid(curr_sheet_playing_measure_idx, 0));
+					int midx0 = line_midx_start.get(0);
+					int midx1 = line_midx_start.get(1);
+					int y0 = measure_tiles.get(
+						getTileUIDFromMidSid(midx0, 0)).y;
+					int y1 = measure_tiles.get(
+						getTileUIDFromMidSid(midx1, 0)).y;
+					if(mtvis1.y - y_offset < y1 - y0) {
+						preview_is_crammed = true;
+					}
+				}
+			}
+		}
+		
 		if(delta_millis > 0) {
 			preview_fading_dir = 1;
 			preview_fade_until_millis = System.currentTimeMillis() + delta_millis;
@@ -176,6 +221,7 @@ public class TommyIntroView extends View implements Runnable {
 		bundle.putInt("curr_gauge_mode", gauge_mode.ordinal());
 		bundle.putInt("line_width_idx", line_width_idx);
 		bundle.putInt("btnrow2_choice_idx", score_history.btnrow2_choice_idx);
+		bundle.putBoolean("is_play_pressed", is_play_pressed);
 		bitmap_helper.free();
 	}
 	
@@ -194,6 +240,8 @@ public class TommyIntroView extends View implements Runnable {
 		gauge_mode = GaugeMode.values()[(bundle.getInt("curr_gauge_mode", 0))];
 		line_width_idx = bundle.getInt("line_width_idx", LINE_WIDTHS.length-1);
 		score_history.btnrow2_choice_idx = bundle.getInt("btnrow2_choice_idx");
+		is_play_pressed = bundle.getBoolean("is_play_pressed");
+		is_restarting = true;
 		setGaugeMode(gauge_mode);
 	}
 
@@ -264,12 +312,21 @@ public class TommyIntroView extends View implements Runnable {
 		synchronized(this) {
 			line_bitmap_helper.free();
 			bitmap_helper.free();
+			if(state_transition_bmp != null) {
+				if(state_transition_bmp.isRecycled() == false)
+					state_transition_bmp.recycle();
+				state_transition_bmp = null;
+			}
 		}
 	}
 	
 	void free() {
 		synchronized(this) {
-			state_transition_bmp.recycle();
+			if(state_transition_bmp != null) {
+				if(state_transition_bmp.isRecycled() == false)
+					state_transition_bmp.recycle();
+				state_transition_bmp = null;
+			}
 			bitmap_helper.free();
 			line_bitmap_helper.free();
 			sheet.free();
@@ -309,7 +366,7 @@ public class TommyIntroView extends View implements Runnable {
 	boolean is_panning_y = false;
 	private long panning_y_start_millis = 0, panning_y_start_offset;
 	private long autoscroll_y_start_millis = 0;
-	private float autoscroll_y_completion = 0.0f;
+	private float autoscroll_y_completion = 1.0f;
 	private int autoscroll_y_start, autoscroll_y_end;
 	private final int AUTOSCROLL_DURATION = 500;
 	private void autoScrollYTo(int y_end) {
@@ -320,17 +377,17 @@ public class TommyIntroView extends View implements Runnable {
 			autoscroll_y_start = y_offset;
 			autoscroll_y_start_millis = System.currentTimeMillis();
 			autoscroll_y_completion = 0.0f;
-			
-			fadeOutPreview(500);
 		}
 	}
 	private void updateAutoScrollY(long millis) {
 		long delta = millis - autoscroll_y_start_millis;
+		boolean is_autoscroll_done = false;
 		if(autoscroll_y_completion >= 1.0f) {
-			return;
+			is_autoscroll_done = true;			
 		} else {
 			if(delta > AUTOSCROLL_DURATION) {
 				autoscroll_y_completion = 1.0f;
+				is_autoscroll_done = true;
 			} else {
 				float t = delta * 1.0f / AUTOSCROLL_DURATION;
 				autoscroll_y_completion = 1.0f - (1.0f - t) * (1.0f - t);
@@ -339,6 +396,9 @@ public class TommyIntroView extends View implements Runnable {
 				need_redraw = true;
 			}
 		}
+		
+		if(is_autoscroll_done) 
+			computeAndApplyPreviewRange();
 	}
 	private void stopAutoScrollY(boolean is_finish) {
 		autoscroll_y_completion = 1.0f;
@@ -366,41 +426,30 @@ public class TommyIntroView extends View implements Runnable {
 	// will cause a screen scrolling.
 	private void getMeasureIdxRangeOnLastLine(int[] idxs) {
 		int midx = 0, y1 = 0;
-		
-		for(int i=0; i<num_measures; i++) {
-			// Ymax
-			int uid0 = getTileUIDFromMidSid(i, 0);
-			MeasureTile mt = measure_tiles.get(uid0);
-			if(y1 != mt.y) {
-				y1 = mt.y;
-				for(int j=0; j<num_staffs; j++) {
-					int uid1 = getTileUIDFromMidSid(i, j);
-					MeasureTile mt1 = measure_tiles.get(uid1);
-					if(mt1.y + mt1.H > y_offset + height) {
-						idxs[0] = midx;
-						idxs[1] = mt.measure_idx - 1;
-						return;
+		synchronized(this) {
+			if(measure_tiles.size() > 0) {
+				for(int i=0; i<num_measures; i++) {
+					// Ymax
+					int uid0 = getTileUIDFromMidSid(i, 0);
+					MeasureTile mt = measure_tiles.get(uid0);
+					if(y1 != mt.y) {
+						y1 = mt.y;
+						for(int j=0; j<num_staffs; j++) {
+							int uid1 = getTileUIDFromMidSid(i, j);
+							MeasureTile mt1 = measure_tiles.get(uid1);
+							if(mt1.y + mt1.H > y_offset + height) {
+								idxs[0] = midx;
+								idxs[1] = mt.measure_idx - 1;
+								return;
+							}
+						}
+						midx = mt.measure_idx;
 					}
 				}
-				midx = mt.measure_idx;
 			}
+			idxs[0] = -1; idxs[1] = -1;
+			return;
 		}
-		/*
-		for(int i=0; i<measure_tiles.size(); i++) {
-			MeasureTile mt = measure_tiles.get(i);
-			if(mt.staff_idx == 0) {
-				if(mt.y + mt.H > y_offset + height) {
-					idxs[0] = midx;
-					idxs[1] = mt.measure_idx - 1;
-					return;
-				} else if(y1 != mt.y) {
-					y1 = mt.y;
-					midx = mt.measure_idx;
-				}
-			}
-		}*/
-		idxs[0] = -1; idxs[1] = -1;
-		return;
 	}
 	
 	private MeasureTile getFirstVisibleMeasureByID(int measure_idx) {
@@ -1769,9 +1818,12 @@ public class TommyIntroView extends View implements Runnable {
 		int W, H, x, touchx, touchy, touchid = -1, btn_textsize, btn_hl_idx = -1, H_button_indicator;
 		int buttons_x[], buttons_y[], buttons_w[], buttons_h[];
 		boolean need_redraw = false;
-		final static int NUM_BUTTONS = 4;
+		final static int NUM_BUTTONS = 5;
 		String buttons_labels[] = new String[NUM_BUTTONS];
+		String pfhint_on, pfhint_off;
 		public StayBottomButtonPanel(int _w, int _h, int _x) {
+			pfhint_on = ctx.getResources().getString(R.string.pageflip_hint_on);
+			pfhint_off = ctx.getResources().getString(R.string.pageflip_hint_off);
 			W = _w; H = _h; x = _x;
 			
 			H_button_indicator = (int)(3*density);
@@ -1791,13 +1843,20 @@ public class TommyIntroView extends View implements Runnable {
 			buttons_w[2] = (W-NUM_BUTTONS*pad)/NUM_BUTTONS;
 			buttons_x[3] = buttons_x[2]+buttons_w[2]+1;
 			buttons_w[3] = (W-NUM_BUTTONS*pad)/NUM_BUTTONS;
-			buttons_h[0] = buttons_h[1] = buttons_h[2] = buttons_h[3] = (_h - 2*pad);
-			buttons_y[0] = buttons_y[1] = buttons_y[2] = buttons_y[3] = pad;
+			buttons_x[4] = buttons_x[3]+buttons_w[3]+1;
+			buttons_w[4] = (W-NUM_BUTTONS*pad)/NUM_BUTTONS;
+			
+			buttons_h[0] = buttons_h[1] = buttons_h[2] = buttons_h[3] = buttons_h[4] = (_h - 2*pad);
+			buttons_y[0] = buttons_y[1] = buttons_y[2] = buttons_y[3] = buttons_y[4] = pad;
 			
 			buttons_labels[0] = ctx.getResources().getString(R.string.zoom_out);
 			buttons_labels[1] = ctx.getResources().getString(R.string.zoom_in);
 			buttons_labels[2] = null;
 			buttons_labels[3] = ctx.getResources().getString(R.string.playback_speed);
+			
+			if(MidiSheetMusicActivity.SHOW_NEXTLINE) {
+				buttons_labels[4] = pfhint_on;
+			} else buttons_labels[4] = pfhint_off;
 		}
 		private boolean isVisible() {
 			int limit0 = y_visible_begin;
@@ -1827,6 +1886,12 @@ public class TommyIntroView extends View implements Runnable {
 							buttons_x[i]+buttons_w[i]-(int)(2*density),
 							y1+buttons_h[i]-(int)(2*density));
 					paint.setStyle(Style.STROKE);
+					
+					// Page Flip Hint on/off?
+					if(i == 4 && MidiSheetMusicActivity.SHOW_NEXTLINE) {
+						paint.setStyle(Style.FILL);
+					}
+					
 					paint.setColor(TommyConfig.getCurrentStyle().highlight_color);
 					c.drawRect(src, paint);
 					
@@ -1926,11 +1991,19 @@ public class TommyIntroView extends View implements Runnable {
 						parent.showAdjustSpeedDialog();
 						break;
 					}
+					case 4:
+					{
+						MidiSheetMusicActivity.SHOW_NEXTLINE = !MidiSheetMusicActivity.SHOW_NEXTLINE;
+						if(MidiSheetMusicActivity.SHOW_NEXTLINE) {
+							buttons_labels[4] = pfhint_on;
+						} else buttons_labels[4] = pfhint_off;
+					}
 					default:
 						break;
 					} 
 				}
 				if(is_zoom_changed) {
+					fadeOutPreview(0);
 					cancelAllPendingRequests();
 					prepareSheetMusicTiles(LINE_WIDTHS[line_width_idx]);
 					MeasureTile first_visible = getFirstMeasureIntersectsTopOfScreen();
@@ -2195,9 +2268,45 @@ public class TommyIntroView extends View implements Runnable {
 				float dx1 = x_mult * curr_sheet_playing_measure_shade_x_begin;
 				float dx2 = x_mult * curr_sheet_playing_measure_shade_x_end;
 				c.drawRect(x+dx1, y0, x+dx2, y1, paint);
-				
 
 				paint.setAlpha(255);
+				
+				// Increment Next Range
+				{
+					if(MidiSheetMusicActivity.SHOW_NEXTLINE) {
+						if(curr_sheet_playing_measure_idx!=-1 && isPreviewVisible()) {
+							
+							boolean is_oob = false;
+							
+							// Out of bound?
+							if(MidiSheetMusicActivity.USE_FAST_RENDERING_METHOD) {
+								if(preview_lidx < line_midx_start.size()-1) {
+									int midx1 = line_midx_start.get(preview_lidx+1);
+									if(curr_sheet_playing_measure_idx >= midx1) {
+										is_oob = true;
+									}
+								}
+							} else {
+								// To be implemented!
+							}
+							
+							if(is_oob) {
+								preview_xmax = width;
+							} else {
+								MeasureTile mt = measure_tiles.get(
+									getTileUIDFromMidSid(curr_sheet_playing_measure_idx, 0));
+								if(MidiSheetMusicActivity.USE_FAST_RENDERING_METHOD) {
+									int next_xmax = (int)(dx1 + this.x - 48.0*density);
+									if(preview_xmax < next_xmax) {
+										preview_xmax = next_xmax;
+									} else {
+										
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 		
@@ -2660,50 +2769,64 @@ public class TommyIntroView extends View implements Runnable {
 					if(curr_sheet_playing_measure_idx != last_sheet_playing_measure_idx) {
 						need_redraw = true;
 						
+						refocusToCurrentPlayingMeasure();
 
 						if(parent.isMidiPlayerPlaying() || last_sheet_playing_measure_idx == num_measures-1) {
 							if(last_sheet_playing_measure_idx >= 0 && last_sheet_playing_measure_idx < num_measures)
 								onMeasurePlayed(curr_sheet_playing_measure_idx);
 							
-							computeAndApplyPreviewRange();
+							if(autoscroll_y_completion == 1.0f) 
+								computeAndApplyPreviewRange();
 						}
 						
-						// Focus on current measure
-						int hl_measure_ymin = Integer.MAX_VALUE, hl_measure_ymax = Integer.MIN_VALUE;
-						for(MeasureTile mt : measure_tiles) {
-							if(mt.measure_idx == curr_sheet_playing_measure_idx) {
-								if(mt.staff_idx == 0) {
-									hl_measure_ymin = mt.y;
-								} else if(mt.staff_idx == num_staffs - 1) {
-									hl_measure_ymax = mt.y + mt.H;
-								}
-							}
-						}
-						
-						// Out of screen upwards
-						int scroll_to = (int)(hl_measure_ymin - SEPARATOR_HEIGHTS[line_width_idx] * density);
-						if(hl_measure_ymin < y_offset) {
-							autoScrollYTo(scroll_to);
-						} else if(y_offset + height < hl_measure_ymax) {
-							autoScrollYTo(scroll_to);
-						}
 					}
 				}
 			} else {
 				last_sheet_playing_measure_idx = curr_sheet_playing_measure_idx = -1;
 			}
 			need_redraw |= staybottom_bottom_panel.need_redraw;
+			
+			// Recovering from screen orientation change
+			if(is_restarting) {
+				refocusToCurrentPlayingMeasure();
+				is_restarting = false;
+			}
 		}
 	}
 		
+	private void refocusToCurrentPlayingMeasure() {
+		// Focus on current measure
+		int hl_measure_ymin = Integer.MAX_VALUE, hl_measure_ymax = Integer.MIN_VALUE;
+		for(MeasureTile mt : measure_tiles) {
+			if(mt.measure_idx == curr_sheet_playing_measure_idx) {
+				if(mt.staff_idx == 0) {
+					hl_measure_ymin = mt.y;
+				} else if(mt.staff_idx == num_staffs - 1) {
+					hl_measure_ymax = mt.y + mt.H;
+				}
+			}
+		}
+		
+		// Out of screen upwards
+		int scroll_to = (int)(hl_measure_ymin - SEPARATOR_HEIGHTS[line_width_idx] * density);
+		if(hl_measure_ymin < y_offset) {
+			autoScrollYTo(scroll_to);
+			preview_xmax = width;
+			fadeOutPreview(400);
+		} else if(y_offset + height < hl_measure_ymax) {
+			autoScrollYTo(scroll_to);
+			preview_xmax = width;
+			fadeOutPreview(400);
+		}
+	}
+
 	private void computeAndApplyPreviewRange() {
-		if(MidiSheetMusicActivity.SHOW_NEXTLINE)
+		if(MidiSheetMusicActivity.SHOW_NEXTLINE && preview_fading_dir == 0)
 		{
 			long millis = System.currentTimeMillis();
 			int idxs[] = {-1, -1};
 			getMeasureIdxRangeOnLastLine(idxs);
-			Log.v("TommyIntroView", String.format("Trigger range: %d,%d",
-				idxs[0], idxs[1]));
+//			Log.v("TommyIntroView", String.format("Trigger range: %d,%d", idxs[0], idxs[1]));
 			if(idxs[0] != -1) {
 				if(curr_sheet_playing_measure_idx >= idxs[0] &&
 					curr_sheet_playing_measure_idx <= idxs[1]) {
@@ -2713,7 +2836,7 @@ public class TommyIntroView extends View implements Runnable {
 							if(line_midx_start.get(lidx) > idxs[1]) {
 								if(lidx != preview_lidx) {
 									fadeOutPreview(0);
-									fadeInPreview(400, lidx, -1, -1);
+									fadeInPreview(1000, lidx, -1, -1);
 								}
 								break;
 							}
@@ -2727,7 +2850,7 @@ public class TommyIntroView extends View implements Runnable {
 							MeasureTile mt = measure_tiles.get(uid);
 							if(mt.y > y2) {
 								preview_midx_max = midx - 1;
-								fadeInPreview(400, -1, preview_midx_min, preview_midx_max);
+								fadeInPreview(1000, -1, preview_midx_min, preview_midx_max);
 								break;
 							}
 						}
@@ -2806,6 +2929,7 @@ public class TommyIntroView extends View implements Runnable {
 						alpha = 255;
 					} else if(preview_fading_dir == -1) {
 						preview_fading_dir = 0;
+						preview_xmax = 0;
 						alpha = 0;
 						preview_lidx = preview_midx_max = preview_midx_min = -1;
 					}
@@ -2817,17 +2941,43 @@ public class TommyIntroView extends View implements Runnable {
 						
 						Bitmap linebmp = line_bitmap_helper.getLineBitmap(preview_lidx);
 						if(linebmp != null && !linebmp.isRecycled()) {
-							paint.setAlpha(alpha);
-							c.drawBitmap(linebmp, 0, 0, paint);
 							paint.setStyle(Style.STROKE);
-							paint.setColor(Color.GREEN);
+							paint.setColor(Color.GREEN); // This guy also sets alpha to 255 !!!
 							paint.setStrokeWidth(density);
 
+							int w = linebmp.getWidth();
+							int xmax = width;
+							if(preview_is_crammed) {
+								w = (int) (w * (1.0f * preview_xmax / width));
+								xmax = preview_xmax;
+							}
+							
+							src.set(0, 0, w, 
+									linebmp.getHeight());
+							dst.set(0, 0, xmax, linebmp.getHeight());
+							paint.setAlpha(alpha);
+							c.drawBitmap(linebmp, src, dst, paint);
+							
 							src.set(0, 0, TommyConfig.bmp_dropshadow32.getWidth(), 
 									TommyConfig.bmp_dropshadow32.getHeight());
-							dst.set(0, linebmp.getHeight(), width, (int)(linebmp.getHeight() + 32*density));
+							dst.set(0, linebmp.getHeight(), xmax, (int)(linebmp.getHeight() + 32*density));
 							c.drawBitmap(TommyConfig.bmp_dropshadow32, src, dst, paint);
+							
+							if(xmax < width && xmax > 0) {
+								src.set(0, 0, TommyConfig.bmp_dropshadow32h.getWidth(), 
+										TommyConfig.bmp_dropshadow32h.getHeight());
+								dst.set(xmax, 0, (int)(xmax + 32*density), linebmp.getHeight());
+								c.drawBitmap(TommyConfig.bmp_dropshadow32h, src, dst, paint);
+								
+								src.set(0, 0, TommyConfig.bmp_dropshadow32vertex.getWidth(), 
+										TommyConfig.bmp_dropshadow32vertex.getHeight());
+								dst.set(xmax, linebmp.getHeight(), 
+									(int)(xmax + 32*density),(int)(linebmp.getHeight() + 32*density));
+								c.drawBitmap(TommyConfig.bmp_dropshadow32vertex, src, dst, paint);
+							}
+							
 							paint.setAlpha(255);
+							paint.setStyle(Style.FILL);
 						}
 					}
 				}

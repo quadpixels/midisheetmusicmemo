@@ -61,7 +61,9 @@
     <string name="select_color_scheme">Select a color scheme</string>
     <string name="select_gauge">Select gauge overlay</string>
     <string name="load_original_msm">Use original MidiSheetMusic</string>
-    <string name="playback_speed">Playback speed</string>
+    <string name="playback_speed">Playback Speed</string>
+    <string name="pageflip_hint_on">Page Flip Hint ON</string>
+    <string name="pageflip_hint_off">Page Flip Hint OFF</string>
     
     <string name="label_reset_readme">Reset in-app readme</string>
     <string name="reset_readme">Quick help is reset!</string>
@@ -105,4 +107,5 @@
     <string name="quiz_seconds">%1$.1f seconds</string>
     <string name="quiz_measures">%1$d measures</string>
     <string name="quiz_tiles_to_go">%1$d / %2$d tiles to go</string>
+    
 </resources>

@@ -32,7 +32,8 @@ public class TommyConfig {
 	
 	public static String[] GAUGE_LABELS;
 	
-	public static Bitmap bmp_settings, bmp_palette, bmp_dropshadow32;
+	public static Bitmap bmp_settings, bmp_palette, bmp_dropshadow32, bmp_dropshadow32h,
+		bmp_dropshadow32vertex;
 	
 	// Some day, I'd want to move them into an X.M.L. file
 	public static void init(Context ctx) {
@@ -97,6 +98,8 @@ public class TommyConfig {
 			bmp_settings = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.settings);
 			bmp_palette = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.palette);
 			bmp_dropshadow32 = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.shadow32);
+			bmp_dropshadow32h = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.shadow32h);
+			bmp_dropshadow32vertex = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.shadow32vertex);
 		}
 		if(GAUGE_LABELS == null) {
 			GAUGE_LABELS = ctx.getResources().getStringArray(R.array.gauge_names);
