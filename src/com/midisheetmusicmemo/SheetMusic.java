@@ -1843,7 +1843,6 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 	        curr_playing_measure_idx = shade_measure_idx_min;
 	        curr_playing_measure_shade_x_begin = x_shade1;
 	        curr_playing_measure_shade_x_end = x_shade1_end;
-	        Log.v("x", String.format("Curr Playing Shade Statistics (%d,%g)", shade_measure_idx_min, x_shade1));
     	}
         
         if (!surfaceReady || staffs == null) {

@@ -77,6 +77,32 @@ public class TommyIntroView extends View implements Runnable {
 	public float curr_sheet_playing_measure_shade_x_begin = 0.0f,
 				curr_sheet_playing_measure_shade_x_end = 0.0f,
 			     last_sheet_playing_measure_shade_x_begin = 0.0f;
+	
+	// Preview Triggers
+	private int preview_trigger_midx_min = -1, preview_trigger_midx_max = -1;
+	// What previews to show on top of screen
+	// Draw lines/tiles depending on which rendering method to use
+	private int preview_midx_min = -1, preview_midx_max = -1, preview_lidx = -1, preview_fade_duration = 0;
+	private int preview_fading_dir = 0;
+	private long preview_fade_until_millis = 0;
+	private void fadeOutPreview(int delta_millis) {
+		preview_fade_duration = delta_millis;
+		if(delta_millis == 0) {
+			preview_midx_min = preview_midx_max = preview_lidx = -1;
+		} else {
+			preview_fading_dir = -1;
+			preview_fade_until_millis = System.currentTimeMillis() + delta_millis;
+		}
+	}
+	private void fadeInPreview(int delta_millis, int lidx, int midx_min, int midx_max) {
+		preview_fade_duration = delta_millis;
+		preview_midx_min = midx_min; preview_midx_max = midx_max; preview_lidx = lidx;
+		if(delta_millis > 0) {
+			preview_fading_dir = 1;
+			preview_fade_until_millis = System.currentTimeMillis() + delta_millis;
+		}
+	}
+	
 	MeasureBitmapHelper bitmap_helper;
 	LineBitmapHelper line_bitmap_helper;
 	byte[] midi_data; String midi_title, midi_uri_string; MidiFile midifile;
@@ -294,6 +320,8 @@ public class TommyIntroView extends View implements Runnable {
 			autoscroll_y_start = y_offset;
 			autoscroll_y_start_millis = System.currentTimeMillis();
 			autoscroll_y_completion = 0.0f;
+			
+			fadeOutPreview(500);
 		}
 	}
 	private void updateAutoScrollY(long millis) {
@@ -332,6 +360,47 @@ public class TommyIntroView extends View implements Runnable {
 			}
 		}
 		return ret;
+	}
+	
+	// Last line is such a line that when played,
+	// will cause a screen scrolling.
+	private void getMeasureIdxRangeOnLastLine(int[] idxs) {
+		int midx = 0, y1 = 0;
+		
+		for(int i=0; i<num_measures; i++) {
+			// Ymax
+			int uid0 = getTileUIDFromMidSid(i, 0);
+			MeasureTile mt = measure_tiles.get(uid0);
+			if(y1 != mt.y) {
+				y1 = mt.y;
+				for(int j=0; j<num_staffs; j++) {
+					int uid1 = getTileUIDFromMidSid(i, j);
+					MeasureTile mt1 = measure_tiles.get(uid1);
+					if(mt1.y + mt1.H > y_offset + height) {
+						idxs[0] = midx;
+						idxs[1] = mt.measure_idx - 1;
+						return;
+					}
+				}
+				midx = mt.measure_idx;
+			}
+		}
+		/*
+		for(int i=0; i<measure_tiles.size(); i++) {
+			MeasureTile mt = measure_tiles.get(i);
+			if(mt.staff_idx == 0) {
+				if(mt.y + mt.H > y_offset + height) {
+					idxs[0] = midx;
+					idxs[1] = mt.measure_idx - 1;
+					return;
+				} else if(y1 != mt.y) {
+					y1 = mt.y;
+					midx = mt.measure_idx;
+				}
+			}
+		}*/
+		idxs[0] = -1; idxs[1] = -1;
+		return;
 	}
 	
 	private MeasureTile getFirstVisibleMeasureByID(int measure_idx) {
@@ -628,10 +697,11 @@ public class TommyIntroView extends View implements Runnable {
 		//
 		void requestLineBitmapAndItsDependencies(int lidx) {
 			queueDrawingCacheRequestByLine(lidx);
+			/*
 			int midx_start = line_midx_start.get(lidx), midx_end;
 			if(lidx == line_midx_start.size() - 1) {
 				midx_end = num_measures;
-			} else midx_end = line_midx_start.get(lidx+1);
+			} else midx_end = line_midx_start.get(lidx+1);*/
 			
 			int idx0_start = line_midx_start.get(lidx) * num_staffs, idx0_end;
 			if(lidx < line_midx_start.size() - 1) {
@@ -940,11 +1010,9 @@ public class TommyIntroView extends View implements Runnable {
 			
 			// Layout row 2 buttons (Time, Accuracy, Mastery)
 			x = pad_left;
-			int w2 = 0;
 			for(int i=0; i<btnrow2_labels.length; i++) {
 				btnrow2_x[i] = x;
 				int w = (int)(2*pad_button + paint.measureText(btnrow2_labels[i]));
-				w2 += w;
 				btnrow2_w[i] = w;
 				x = x + w + 1;
 			}
@@ -1991,6 +2059,7 @@ public class TommyIntroView extends View implements Runnable {
 			}
 		}
 		
+		
 		if(MidiSheetMusicActivity.USE_FAST_RENDERING_METHOD) {
 			int lidx = -999;
 			if(midx != num_measures - 1) {
@@ -2224,27 +2293,6 @@ public class TommyIntroView extends View implements Runnable {
 								x1 += increment;
 							}
 						}
-						if(gauge_mode == GaugeMode.MASTERY_LEVEL) {
-							paint_measure.setColor(TommyConfig.getCurrentStyle().btn_text_color);
-							int actual_sidx = actual_staff_idx.get(staff_idx);
-							StringBuilder sb = new StringBuilder();
-							
-							// This is purely screen clutter, remove it
-							/*
-							for(int i=0; i<measure_masteries.size(); i++) {
-								int age = i;
-								float m = measure_masteries.get(age).get(staff_idx).get(measure_idx);
-								if(m!=-999.0f) {
-									if(i>0) sb.append(",");
-									else sb.append("M:");
-									sb.append(m);
-								} else break;
-							}
-							sb.append("|S:");
-							sb.append(measure_mastery_states.get(actual_sidx).get(measure_idx));
-							c.drawText(sb.toString(), x+xoffset, y0-paint_measure.descent(), paint_measure);
-							*/
-						}
 					}
 				}
 			}
@@ -2300,8 +2348,12 @@ public class TommyIntroView extends View implements Runnable {
 						parent.stopMidiPlayer();
 						curr_sheet_playing_measure_idx = -1;
 						is_play_pressed = false;
+						fadeOutPreview(300);
 					} else {
 						if(is_longpress1_ok) {
+							last_sheet_playing_measure_idx = -1;
+							curr_sheet_playing_measure_idx = measure_idx;
+							computeAndApplyPreviewRange();
 							parent.player.MoveToMeasureBegin(measure_idx);
 							parent.startMidiPlayer();
 							is_play_pressed = true;
@@ -2612,6 +2664,8 @@ public class TommyIntroView extends View implements Runnable {
 						if(parent.isMidiPlayerPlaying() || last_sheet_playing_measure_idx == num_measures-1) {
 							if(last_sheet_playing_measure_idx >= 0 && last_sheet_playing_measure_idx < num_measures)
 								onMeasurePlayed(curr_sheet_playing_measure_idx);
+							
+							computeAndApplyPreviewRange();
 						}
 						
 						// Focus on current measure
@@ -2642,6 +2696,47 @@ public class TommyIntroView extends View implements Runnable {
 		}
 	}
 		
+	private void computeAndApplyPreviewRange() {
+		if(MidiSheetMusicActivity.SHOW_NEXTLINE)
+		{
+			long millis = System.currentTimeMillis();
+			int idxs[] = {-1, -1};
+			getMeasureIdxRangeOnLastLine(idxs);
+			Log.v("TommyIntroView", String.format("Trigger range: %d,%d",
+				idxs[0], idxs[1]));
+			if(idxs[0] != -1) {
+				if(curr_sheet_playing_measure_idx >= idxs[0] &&
+					curr_sheet_playing_measure_idx <= idxs[1]) {
+					// Compute Next Line Measure Index Range.
+					if(MidiSheetMusicActivity.USE_FAST_RENDERING_METHOD) {
+						for(int lidx = 0; lidx < line_midx_start.size(); lidx++) {
+							if(line_midx_start.get(lidx) > idxs[1]) {
+								if(lidx != preview_lidx) {
+									fadeOutPreview(0);
+									fadeInPreview(400, lidx, -1, -1);
+								}
+								break;
+							}
+						}
+					} else {
+						preview_midx_min = idxs[1] + 1;
+						int uid0 = getTileUIDFromMidSid(preview_midx_min, 0);
+						int y2   = measure_tiles.get(uid0).y;
+						for(int midx = preview_midx_min; midx < num_measures; midx++) {
+							int uid = getTileUIDFromMidSid(midx, 0);
+							MeasureTile mt = measure_tiles.get(uid);
+							if(mt.y > y2) {
+								preview_midx_max = midx - 1;
+								fadeInPreview(400, -1, preview_midx_min, preview_midx_max);
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	protected void do_draw(Canvas c) {
 		frame_count++;
 		c.drawColor(TommyConfig.getCurrentStyle().background_color);
@@ -2695,6 +2790,52 @@ public class TommyIntroView extends View implements Runnable {
 			}
 		}
 		
+		// Preview!
+		if(MidiSheetMusicActivity.SHOW_NEXTLINE) {
+			long millis = System.currentTimeMillis();
+			int alpha = 255;
+			if(preview_fading_dir != 0) {
+				if(preview_fade_until_millis > millis) {
+					alpha = (int)(255 * (1.0f * (preview_fade_until_millis - millis) / preview_fade_duration));
+					if(preview_fading_dir == 1) {
+						alpha = 255 - alpha;
+					}
+				} else {
+					if(preview_fading_dir == 1) {
+						preview_fading_dir = 0;
+						alpha = 255;
+					} else if(preview_fading_dir == -1) {
+						preview_fading_dir = 0;
+						alpha = 0;
+						preview_lidx = preview_midx_max = preview_midx_min = -1;
+					}
+				}
+			}
+			if(MidiSheetMusicActivity.USE_FAST_RENDERING_METHOD) {
+				if(preview_lidx != -1) {
+					synchronized(paint) {
+						
+						Bitmap linebmp = line_bitmap_helper.getLineBitmap(preview_lidx);
+						if(linebmp != null && !linebmp.isRecycled()) {
+							paint.setAlpha(alpha);
+							c.drawBitmap(linebmp, 0, 0, paint);
+							paint.setStyle(Style.STROKE);
+							paint.setColor(Color.GREEN);
+							paint.setStrokeWidth(density);
+
+							src.set(0, 0, TommyConfig.bmp_dropshadow32.getWidth(), 
+									TommyConfig.bmp_dropshadow32.getHeight());
+							dst.set(0, linebmp.getHeight(), width, (int)(linebmp.getHeight() + 32*density));
+							c.drawBitmap(TommyConfig.bmp_dropshadow32, src, dst, paint);
+							paint.setAlpha(255);
+						}
+					}
+				}
+			} else {
+				// To be implemented!
+			}
+		}
+		
 		staybottom_bottom_panel.draw(c);
 
 		// Draw Cache Status.
@@ -2718,7 +2859,6 @@ public class TommyIntroView extends View implements Runnable {
 				paint.setAntiAlias(false);
 				if(line_bitmap_helper.line_bmps.size() > 0)
 				{
-				
 					int y0 = (int)(height - 32*density);
 					float x_increment = width * 1.0f / num_measures;
 					float y_increment = 5 * density;
@@ -2762,8 +2902,29 @@ public class TommyIntroView extends View implements Runnable {
 			}
 		}
 
+		/*
+		{ // Testing "last line"
+			int midx = getFirstMeasureIdxOnLastLine();
+			if(midx != -1) {
+				int ymin = 2147483647, ymax = -1;
+				for(MeasureTile mt : measure_tiles) {
+					if(mt.measure_idx == midx) {
+						if(ymin > mt.y) ymin = mt.y;
+						if(ymax < mt.y) ymax = mt.y;
+					}
+				}
+				paint.setStyle(Style.STROKE);
+				paint.setColor(Color.GREEN);
+				c.drawRect(0, ymin - y_offset, width, ymax - y_offset, paint);
+			}
+		}
+		*/
 		
 		need_redraw = false;
+		
+		if(preview_fading_dir != 0) {
+			need_redraw = true; // Smooth!
+		}
 	}
 	
 	@Override
@@ -2976,7 +3137,7 @@ public class TommyIntroView extends View implements Runnable {
 			masteries.add(m1);
 		}
 		
-		Log.v("Compute All MEasure Mastery History", "age="+hlen);
+		Log.v("Compute All Measure Mastery History", "age="+hlen);
 		for(int age=0; age<hlen; age++) {
 			ArrayList<ArrayList<Float>> this_age = new ArrayList<ArrayList<Float>>();
 			for(int i=0; i<num_staffs; i++) {
@@ -3147,6 +3308,10 @@ public class TommyIntroView extends View implements Runnable {
 	// Some drawing commands are GONE on my TouchPad running 4.3  :((((((
 	// Some are disappearing on One X, too (What is happening!!!!)
 	//
+	// Update: I know what's happening.
+	// top must be greater than bottom.
+	// Top doesn't mean "the top of the screen", it means "the point with a larger Y coordinate". 
+	// That's why!
 	
 	/*
 	@SuppressLint("InlinedApi")

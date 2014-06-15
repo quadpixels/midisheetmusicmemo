@@ -35,6 +35,7 @@ public class MidiSheetMusicActivity extends Activity {
 	public static boolean DEBUG = false, USE_ORIGINAL_MSM = false;
 	public static boolean USE_FAST_RENDERING_METHOD = true;
 	public static boolean SHOW_README=true;
+	public static boolean SHOW_NEXTLINE = true; // 2014-06-14
 	public static boolean IS_TOMMY = false;
 	public static SheetMusic sheet0;
 	public static float density;
