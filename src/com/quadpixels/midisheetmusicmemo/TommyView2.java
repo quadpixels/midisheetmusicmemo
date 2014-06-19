@@ -1313,6 +1313,7 @@ public class TommyView2 extends View implements Runnable {
 					}
 				}
 				
+				if(MidiSheetMusicActivity.DEBUG)
 				{
 					switch(measures_status.get(idx_staff).get(idx_measure)) {
 					case HIDDEN:

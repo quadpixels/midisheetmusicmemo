@@ -62,6 +62,8 @@
     <string name="select_gauge">请选择覆盖于小节之上的颜色标识</string>
     <string name="load_original_msm">启动原版MidiSheetMusic</string>
     <string name="playback_speed">回放速度</string>
+    <string name="pageflip_hint_on">翻页提示开</string>
+    <string name="pageflip_hint_off">翻页提示关</string>
     
     <string name="help21">谱子可上下滑动。长按一个小节开始播放，播放时单击任何一处停止播放。</string>
     <string name="help22">滑到下面一点就会出现底部工具条，可以控制谱子的显示、覆盖层和播放速度。</string>
