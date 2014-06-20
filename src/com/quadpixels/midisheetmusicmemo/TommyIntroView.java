@@ -119,7 +119,7 @@ public class TommyIntroView extends View implements Runnable {
 	}
 	
 	private void fadeInPreview(int delta_millis, int lidx, int midx_min, int midx_max) {
-		Log.v("TommyIntroView", "fade in");
+		Log.v("TommyIntroView", String.format("fade in, %d, %d, %d", lidx, midx_min, midx_max));
 		preview_fade_duration = delta_millis;
 		preview_midx_min = midx_min; preview_midx_max = midx_max; preview_lidx = lidx;
 		
@@ -412,12 +412,14 @@ public class TommyIntroView extends View implements Runnable {
 				y_offset = (int)(autoscroll_y_start * (1.0f - autoscroll_y_completion) 
 						+ autoscroll_y_end * autoscroll_y_completion);
 				need_redraw = true;
+				if(delta <= 0) {
+					preview_begin_yoffset = -1; preview_line_y = -1;
+				}
 			}
 		}
 		
 		if(is_autoscroll_done) {
 			// Cancel all hiding and fading effects
-			preview_begin_yoffset = -1; preview_line_y = -1;
 			computeAndApplyPreviewRange();
 		}
 	}
@@ -2732,6 +2734,7 @@ public class TommyIntroView extends View implements Runnable {
 							if(is_panning_y == false) {
 								is_panning_y = true;
 								stopAutoScrollY(false);
+								fadeOutPreview(500);
 								panning_y_start_millis = System.currentTimeMillis();
 								panning_y_start_offset = y_offset;
 							}
@@ -2924,14 +2927,16 @@ public class TommyIntroView extends View implements Runnable {
 						
 						// If the auto-scroll is about to reach the highlighted line,
 						//    then fade out all the lines in front of that line
-						if(preview_lidx != -1) {
-							if(preview_begin_yoffset != -1) {
-								if(y_offset > preview_begin_yoffset && lidx <= preview_lidx) {
-									float transparency = 1.0f - 1.0f*(y_offset - preview_begin_yoffset) /
-											(preview_line_y - preview_begin_yoffset);
-									transparency = 1.0f - (1.0f - transparency) * (1.0f - transparency);
-									int alpha = (int)(255 - transparency * 255);
-									paint.setAlpha(alpha);
+						if(MidiSheetMusicActivity.SHOW_NEXTLINE) {
+							if(preview_lidx != -1) {
+								if(preview_begin_yoffset != -1) {
+									if(y_offset > preview_begin_yoffset && lidx <= preview_lidx) {
+										float completion = 1.0f*(y_offset - preview_begin_yoffset) /
+												(preview_line_y - preview_begin_yoffset);
+										completion = 1.0f - (1.0f - completion) * (1.0f - completion);
+										int alpha = (int)(255 - completion * 255);
+										paint.setAlpha(alpha);
+									}
 								}
 							}
 						}
