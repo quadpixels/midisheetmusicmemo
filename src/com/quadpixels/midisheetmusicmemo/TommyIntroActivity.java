@@ -351,16 +351,10 @@ public class TommyIntroActivity extends Activity {
 		
 		SeekBar.OnSeekBarChangeListener sb_chg_listener = new SeekBar.OnSeekBarChangeListener() {
 			@Override
-			public void onStopTrackingTouch(SeekBar seekBar) {
-				// TODO Auto-generated method stub
-				
-			}
+			public void onStopTrackingTouch(SeekBar seekBar) {}
 			
 			@Override
-			public void onStartTrackingTouch(SeekBar seekBar) {
-				// TODO Auto-generated method stub
-				
-			}
+			public void onStartTrackingTouch(SeekBar seekBar) {}
 			
 			@Override
 			public void onProgressChanged(SeekBar seekBar, int progress,
@@ -369,7 +363,7 @@ public class TommyIntroActivity extends Activity {
 				double inverse_tempo = 1.0 / midi_file.getTime().getTempo();
 		        double inverse_tempo_scaled = inverse_tempo * ratio;
 		        options.tempo = (int)(1.0 / inverse_tempo_scaled);
-				tv.setText(String.format("Tempo=%d", (int)(options.tempo)));
+				tv.setText(String.format("%.1f%%", (options.tempo) / midi_file.getTime().getTempo()));
 			}
 		};
 		sb.setOnSeekBarChangeListener(sb_chg_listener);
