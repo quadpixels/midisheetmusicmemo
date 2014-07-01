@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.midisheetmusicmemo"
-      android:versionCode="11"
+      android:versionCode="12"
       android:versionName="0.9026">
-    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="10" />
+    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="11" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <application android:icon="@drawable/icon" android:label="@string/app_name">
         <activity android:name="com.midisheetmusicmemo.MidiSheetMusicActivity"

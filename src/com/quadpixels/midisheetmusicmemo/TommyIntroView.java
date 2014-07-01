@@ -6,6 +6,8 @@
 // 2014-05-03 Adding note-accurate progress indication --- ?
 // 2014-05-05 Starting to consider how to show Mastery Data
 // Issue on 2014-06-16: The Next Line may not necessarily appear on the top of the screen. In that case ..
+//                      Solved: using "expanding previews".
+// Issue on 2014-06-23: Screen flickers after transition is done
 
 package com.quadpixels.midisheetmusicmemo;
 
@@ -712,7 +714,7 @@ public class TommyIntroView extends View implements Runnable {
 				for(int i=0; i<y_separators.size(); i++) {
 					int ys = y_separators.get(i);
 					int h_sep = y_separators_heights.get(i);
-					if(ys + h_sep > line_ymin && ys < line_ymin + height) {
+					if(ys + h_sep >= line_ymin && ys <= line_ymin + height) {
 						dst.set(0, (int)(ys), width, (int)(ys+h_sep));
 						bk.setBounds(dst);
 						bk.draw(c);
@@ -883,7 +885,8 @@ public class TommyIntroView extends View implements Runnable {
 				}
 			}
 			long millis = max_tstamp - min_tstamp;
-			return (float) (sum_dy * 1.0f / (max_tstamp - min_tstamp) * Math.pow(0.5, millis*1.0f/40.0f));
+			if(millis < 5) return 0;
+			return (float) (sum_dy * 1.0f / millis * Math.pow(0.5, millis*1.0f/40.0f));
 		}
 		
 		public void clearDeltaXY() { deltax = deltay = 0; }
@@ -2316,7 +2319,7 @@ public class TommyIntroView extends View implements Runnable {
 								preview_width = width;
 							} else {
 								if(MidiSheetMusicActivity.USE_FAST_RENDERING_METHOD) {
-									int next_xmax = (int)(dx1 + this.x - 48.0*density);
+									int next_xmax = (int)(dx1 + this.x - width*0.5f); // TOMMY20140623
 									if(preview_width < next_xmax) {
 										preview_width = next_xmax;
 									} else {
@@ -2936,6 +2939,8 @@ public class TommyIntroView extends View implements Runnable {
 										completion = 1.0f - (1.0f - completion) * (1.0f - completion);
 										int alpha = (int)(255 - completion * 255);
 										paint.setAlpha(alpha);
+									} else { // Fixes flicker?
+										preview_begin_yoffset = preview_line_y = -1;
 									}
 								}
 							}
