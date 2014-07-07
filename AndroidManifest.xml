@@ -42,5 +42,16 @@
                 <data android:scheme="file"  android:host="*" android:pathPattern=".*\\.mid" android:mimeType="*/*"  />
             </intent-filter>
         </activity>
+        
+        <receiver android:name="com.quadpixels.midisheetmusicmemo.TommyWidget" android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/widget_sheetmusic" />
+        </receiver>
+        
+        <service android:name="com.quadpixels.midisheetmusicmemo.TommyWidget$UpdateService" />
+        
     </application>
 </manifest>

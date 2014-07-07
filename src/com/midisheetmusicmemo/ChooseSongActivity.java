@@ -84,6 +84,7 @@ public class ChooseSongActivity extends TabActivity {
         } else {
         	intent = new Intent(this, TommyIntroActivity.class);
         }
+        Log.v("doOpenFile", "URI: " + file.getUri().toString());
         intent.putExtra(SheetMusicActivity.MidiTitleID, file.toString());
         intent.putExtra(SheetMusicActivity.MidiDataID,  file.getData(this));
         intent.putExtra(TommyConfig.FILE_URI_ID,        file.toStringFull());

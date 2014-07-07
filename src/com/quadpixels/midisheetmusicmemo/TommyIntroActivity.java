@@ -2,6 +2,7 @@ package com.quadpixels.midisheetmusicmemo;
 
 import java.util.zip.CRC32;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -9,6 +10,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -134,6 +136,23 @@ public class TommyIntroActivity extends Activity {
 			Log.v("TommyIntroActivity", "Recreated Player");
 			player = new MidiPlayer(this);
 			player.SetMidiFile(midi_file, options, view.sheet);
+		}
+		
+		// Hide Status Bar
+		// Refer to this page:
+		// https://developer.android.com/training/system-ui/status.html
+		if (Build.VERSION.SDK_INT < 16) {
+			getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+					WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		} else {
+			View decorView = getWindow().getDecorView();
+			// Hide the status bar.
+			int uiOptions = View.SYSTEM_UI_FLAG_FULLSCREEN;
+			decorView.setSystemUiVisibility(uiOptions);
+			// Remember that you should never show the action bar if the
+			// status bar is hidden, so hide that too if necessary.
+			ActionBar actionBar = getActionBar();
+			actionBar.hide();
 		}
 	}
 	
