@@ -16,11 +16,16 @@ import java.util.Currency;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.Random;
 import java.util.Set;
 import java.util.zip.CRC32;
 
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -38,15 +43,18 @@ import android.os.Bundle;
 import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.text.TextPaint;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.RemoteViews;
 
 import com.midisheetmusicmemo.MidiFile;
 import com.midisheetmusicmemo.MidiOptions;
 import com.midisheetmusicmemo.MidiSheetMusicActivity;
 import com.midisheetmusicmemo.R;
 import com.midisheetmusicmemo.SheetMusic;
+import com.midisheetmusicmemo.SheetMusicActivity;
 import com.midisheetmusicmemo.SheetMusic.Vec2;
 
 public class TommyIntroView extends View implements Runnable {
@@ -375,6 +383,7 @@ public class TommyIntroView extends View implements Runnable {
 			SharedPreferences.Editor editor = prefs_playcount.edit();
 			editor.putInt(midi_uri_string + "_last_zoom_idx", line_width_idx);
 			editor.commit();
+			is_inited = false;
 		}
 	}
 	
@@ -2579,6 +2588,9 @@ public class TommyIntroView extends View implements Runnable {
 			String _midi_name, String _midi_uri_string, MidiOptions _options,  
 			TommyIntroActivity tia) {
 		super(context);
+		staybottom_bottom_panel = null;
+		score_history = null;
+		button_panel = null;
 		// Initialize buffer
 		parent = tia;
 		src = new Rect(); dst = new Rect();
@@ -2595,6 +2607,14 @@ public class TommyIntroView extends View implements Runnable {
 		midi_title = _midi_name;
 		midi_uri_string = _midi_uri_string;
 		density = MidiSheetMusicActivity.density;
+		
+		if(density == 0) {
+	        DisplayMetrics dm = new DisplayMetrics();
+	        this.parent.getWindowManager().getDefaultDisplay().getMetrics(dm);
+	        density = dm.density;
+	        MidiSheetMusicActivity.density = density;
+		}
+		
 		paint = new Paint();
 		paint.setAntiAlias(true);
 		bmp_paint = new Paint();
@@ -2712,6 +2732,32 @@ public class TommyIntroView extends View implements Runnable {
 			state_transition_bmp = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.statetransitions);
 		}
 		setGaugeMode(gauge_mode);
+		
+		//
+
+		// Update widget, if there is any
+		RemoteViews updateViews = new RemoteViews(ctx.getPackageName(), R.layout.widget_sheetmusic);
+        // Push update for this widget to the home screen
+
+		Intent intent = new Intent(this.getContext(), TommyIntroActivity.class);
+        intent.putExtra(SheetMusicActivity.MidiTitleID, midi_title);
+        intent.putExtra(SheetMusicActivity.MidiDataID,  midi_data);
+        intent.putExtra(TommyConfig.FILE_URI_ID,        midi_uri_string);
+        PendingIntent pending_intent = PendingIntent.getActivity(ctx,
+                0 /* no requestCode */, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        
+        // Cancel Current -> http://pilhuhn.blogspot.com/2010/12/pitfall-in-pendingintent-with-solution.html
+        
+        updateViews.setOnClickPendingIntent(R.id.widget_image_view, pending_intent);
+        
+        Random random = new Random(System.currentTimeMillis());
+        int midx = random.nextInt(sheet.getNumMeasures()), sidx = random.nextInt(sheet.getNumStaffs());
+        Bitmap bmp = sheet.RenderTile(midx, sidx, 1.0f, 1.0f);
+        updateViews.setImageViewBitmap(R.id.widget_image_view, bmp);
+        
+        ComponentName thisWidget = new ComponentName(ctx, TommyWidget.class);
+        AppWidgetManager manager = AppWidgetManager.getInstance(ctx);
+        manager.updateAppWidget(thisWidget, updateViews);
 	}
 	
 	private void update() {
@@ -2899,6 +2945,9 @@ public class TommyIntroView extends View implements Runnable {
 		
 		score_history.draw(c);
 		button_panel.draw(c);
+		if(score_history.y < 10) {
+			Log.v("!!!!", score_history.y + ", " + button_panel.y);
+		}
 	
 		if(MidiSheetMusicActivity.USE_FAST_RENDERING_METHOD==false) {
 			// draw separators
@@ -2936,11 +2985,11 @@ public class TommyIntroView extends View implements Runnable {
 									if(y_offset > preview_begin_yoffset && lidx <= preview_lidx) {
 										float completion = 1.0f*(y_offset - preview_begin_yoffset) /
 												(preview_line_y - preview_begin_yoffset);
-										completion = 1.0f - (1.0f - completion) * (1.0f - completion);
-										int alpha = (int)(255 - completion * 255);
+										completion = (1.0f - completion) * (1.0f - completion);
+										int alpha = (int)(completion * 255);
 										paint.setAlpha(alpha);
 									} else { // Fixes flicker?
-										preview_begin_yoffset = preview_line_y = -1;
+//										preview_begin_yoffset = preview_line_y = -1;
 									}
 								}
 							}
@@ -3309,6 +3358,7 @@ public class TommyIntroView extends View implements Runnable {
 	private synchronized void layout() {
 		// Prepare a 2-screenful-sized buffer
 		// Measurement of height here may not be accurate b/c the IME panel takes up half of the screen!!!
+		// A bug spotted on 2014-07-07: density equals ZERO!
 		updateBitmapMemoryBudget();
 		MeasureTile firstmt = getFirstMeasureIntersectsTopOfScreen();
 		
@@ -3504,7 +3554,7 @@ public class TommyIntroView extends View implements Runnable {
 	   int parentHeight = MeasureSpec.getSize(heightMeasureSpec);
 	   this.setMeasuredDimension(parentWidth, parentHeight);
 	   width = parentWidth; height = parentHeight;
-	   Log.v("TommyIntroView.onMeasure", String.format("W=%d, H=%d", width, height));
+//	   Log.v("TommyIntroView.onMeasure", String.format("W=%d, H=%d", width, height));
 	   super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 	   setMeasuredDimension(width, height);
 	   updateBitmapMemoryBudget();

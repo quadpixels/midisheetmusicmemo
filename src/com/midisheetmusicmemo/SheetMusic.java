@@ -1457,7 +1457,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     	int num_measures = 0;
     	if(staffs.size() > 0) num_measures = staffs.get(0).getNumMeasures();
     	if(num_measures == 0) {
-    		Log.v("SheetMusic", "Rendering all measures, but we have 0 measures.");
+//    		Log.v("SheetMusic", "Rendering all measures, but we have 0 measures.");
     	}
     	
     	num_notes = 0;
@@ -1482,7 +1482,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 	    		if(i==0) { xlim = f.DrawMeasure(null, i, paint, true, 0.0f); }
 	    		else { xlim = f.DrawMeasure(null, i, paint, false, 0.0f); }
     			
-    			Log.v("SheetMusic", String.format("Measure %d, width=%d/%d", i, xlim.y - xlim.x, line_width));
+//    			Log.v("SheetMusic", String.format("Measure %d, width=%d/%d", i, xlim.y - xlim.x, line_width));
     			
     			// 把右边补齐
     			pad_right = 0;
@@ -1490,7 +1490,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 	    			if(x+xlim.y - xlim.x > line_width) {
 	    				if(x!=0) {
 		    				pad_right = line_width - x;
-		    				Log.v("SheetMusic", String.format("pad_right=%d, i=%d", pad_right, i));
+//		    				Log.v("SheetMusic", String.format("pad_right=%d, i=%d", pad_right, i));
 		    				x = 0;
 	    					line_end_idx = i;
 	    					i--; // Re-layout this measure
@@ -1715,14 +1715,14 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 	    		if(i==0) { xlim = f.DrawMeasure(null, i, paint, true, 0.0f); }
 	    		else { xlim = f.DrawMeasure(null, i, paint, false, 0.0f); }
     			
-    			Log.v("SheetMusic", String.format("Measure %d, width=%d", i, xlim.y - xlim.x));
+//    			Log.v("SheetMusic", String.format("Measure %d, width=%d", i, xlim.y - xlim.x));
     			
     			// 把右边补齐
     			pad_right = 0;
     			if(i>0) {
 	    			if(x+xlim.y - xlim.x > line_width) {
 	    				pad_right = line_width - x;
-	    				Log.v("SheetMusic", String.format("pad_right=%d, i=%d", pad_right, i));
+//	    				Log.v("SheetMusic", String.format("pad_right=%d, i=%d", pad_right, i));
 	    				x = 0;
 	    				line_end_idx = i;
 	    				i--; // Re-layout this measure

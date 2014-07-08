@@ -1,15 +1,20 @@
 package com.quadpixels.midisheetmusicmemo;
 
+import java.util.Random;
 import java.util.zip.CRC32;
 
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,6 +26,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.RelativeLayout;
+import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -65,26 +71,31 @@ public class TommyIntroActivity extends Activity {
 	private static final int SETTINGS_REQUEST_CODE = 1;
 	int last_seekbar_progress = 99;
 	
+	public boolean isMidiPlayerPlaying() {
+		if(player.getPlaystate() == player.playing) return true;
+		else return false;
+	}
+	
 	public void onCreate(Bundle _bundle) {
 		super.onCreate(_bundle);
-        
+	    
 		bundle = _bundle;
 		ctx = getApplicationContext();
-
-        ClefSymbol.LoadImages(ctx);
-        TimeSigSymbol.LoadImages(ctx);
-        MidiPlayer.LoadImages(ctx);
+	
+	    ClefSymbol.LoadImages(ctx);
+	    TimeSigSymbol.LoadImages(ctx);
+	    MidiPlayer.LoadImages(ctx);
 		
 		prefs_colorscheme  = ctx.getSharedPreferences("colorscheme", Context.MODE_PRIVATE);
 		prefs_readme       = ctx.getSharedPreferences("readme", Context.MODE_PRIVATE);
-
+	
 		midi_data = this.getIntent().getByteArrayExtra(SheetMusicActivity.MidiDataID);
 		midi_title= this.getIntent().getStringExtra(SheetMusicActivity.MidiTitleID);
 		midi_uri_string = this.getIntent().getStringExtra(TommyConfig.FILE_URI_ID);
 		setTitle(midi_title);
 		
 		midi_file = new MidiFile(midi_data, midi_title);
-
+	
 		// Settings used by original MidiSheetMusic.
 		options = new MidiOptions(midi_file);
 		{
@@ -106,12 +117,7 @@ public class TommyIntroActivity extends Activity {
 		error_no_tracks_selected = this.getResources().getString(R.string.error_no_tracks_selected);
 		createView();
 	}
-	
-	public boolean isMidiPlayerPlaying() {
-		if(player.getPlaystate() == player.playing) return true;
-		else return false;
-	}
-	
+
 	private void createView() {
 		boolean readme_shown = prefs_readme.getBoolean("readme1_shown", false);
 		
@@ -192,7 +198,8 @@ public class TommyIntroActivity extends Activity {
 	public void onDestroy() {
 		super.onDestroy();
 		if(isFinishing()) {
-			player.Stop();
+			Log.v("TommyIntroActivity", "onDestroy, isFinishing=true");
+			if(player != null) { player.Stop(); }
 			player = null;
 			if(view!=null) {
 				view.free();
@@ -204,7 +211,17 @@ public class TommyIntroActivity extends Activity {
 			midi_title = null;
 			System.gc();
 			ChooseSongActivity.logHeap();
+			
+
+			if(view != null) {
+				view.free();
+				view.freeCache();
+				view = null;
+			}
+			
 			finish();
+		} else {
+			Log.v("TommyIntroActivity", "onDestroy, isFinishing=false");
 		}
 		if(view != null) {
 			view.free();
@@ -382,7 +399,7 @@ public class TommyIntroActivity extends Activity {
 				double inverse_tempo = 1.0 / midi_file.getTime().getTempo();
 		        double inverse_tempo_scaled = inverse_tempo * ratio;
 		        options.tempo = (int)(1.0 / inverse_tempo_scaled);
-				tv.setText(String.format("%.1f%%", (options.tempo) / midi_file.getTime().getTempo()));
+				tv.setText(String.format("%.1f%%", 100.0f / (options.tempo) * midi_file.getTime().getTempo()));
 			}
 		};
 		sb.setOnSeekBarChangeListener(sb_chg_listener);

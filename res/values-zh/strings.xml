@@ -102,4 +102,6 @@
     <string name="quiz_seconds">用时%1$.1f秒</string>
     <string name="quiz_measures">%1$d个小节</string>
     <string name="quiz_tiles_to_go">还剩%1$d / %2$d块</string>
+    
+    <string name="widget_uninited">这里显示最后查看的谱子的一个小块</string>
 </resources>
