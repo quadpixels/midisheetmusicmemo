@@ -2608,13 +2608,17 @@ public class TommyIntroView extends View implements Runnable {
 		midi_uri_string = _midi_uri_string;
 		density = MidiSheetMusicActivity.density;
 		
-		if(density == 0) {
-	        DisplayMetrics dm = new DisplayMetrics();
-	        this.parent.getWindowManager().getDefaultDisplay().getMetrics(dm);
-	        density = dm.density;
-	        MidiSheetMusicActivity.density = density;
-		}
-		
+        DisplayMetrics dm = new DisplayMetrics();
+        this.parent.getWindowManager().getDefaultDisplay().getMetrics(dm);
+        density = dm.density;
+        MidiSheetMusicActivity.density = density;
+        float inch_w = (float)Math.sqrt(dm.widthPixels*dm.widthPixels+dm.heightPixels*dm.heightPixels) 
+        		* 1.0f / dm.densityDpi;
+        if(inch_w < 3) { line_width_idx = 0; } //  320
+        else if(inch_w < 5) { line_width_idx = 1; } // 480
+        else if(inch_w < 7) { line_width_idx = 2; } // 640
+        else { line_width_idx = 3; } // 800
+        
 		paint = new Paint();
 		paint.setAntiAlias(true);
 		bmp_paint = new Paint();
@@ -2651,11 +2655,12 @@ public class TommyIntroView extends View implements Runnable {
 		prefs_quizstats  = ctx.getSharedPreferences("quizstats",  Context.MODE_PRIVATE);
 		prefs_finegrained= ctx.getSharedPreferences("finegrained", Context.MODE_PRIVATE);
 		prefs_colorscheme= ctx.getSharedPreferences("colorscheme", Context.MODE_PRIVATE);
+		
 		String cksm = String.format("%x", checksum);
 		num_played = prefs_playcount.getInt(midi_uri_string, 0);
 		// Load last used zoom level.
 		{
-			line_width_idx = prefs_playcount.getInt(midi_uri_string+"_last_zoom_idx", LINE_WIDTHS.length - 1);
+			line_width_idx = prefs_playcount.getInt(midi_uri_string+"_last_zoom_idx", line_width_idx);
 			if(line_width_idx < 0) line_width_idx = 0;
 			if(line_width_idx > LINE_WIDTHS.length-1) line_width_idx = LINE_WIDTHS.length - 1;
 		}
@@ -2988,9 +2993,10 @@ public class TommyIntroView extends View implements Runnable {
 										completion = (1.0f - completion) * (1.0f - completion);
 										int alpha = (int)(completion * 255);
 										paint.setAlpha(alpha);
-									} else { // Fixes flicker?
-//										preview_begin_yoffset = preview_line_y = -1;
-									}
+										if(completion <= 0.01f) {
+											preview_begin_yoffset = preview_line_y = -1;
+										}
+									} 
 								}
 							}
 						}
