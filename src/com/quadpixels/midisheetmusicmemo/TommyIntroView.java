@@ -2488,11 +2488,13 @@ public class TommyIntroView extends View implements Runnable {
 					if(parent.isMidiPlayerPlaying()) {
 						parent.stopMidiPlayer();
 						curr_sheet_playing_measure_idx = -1;
+						last_sheet_playing_measure_idx = -1;
 						is_play_pressed = false;
+						sheet.resetCurrentPlayingMeasure();
 						fadeOutPreview(300);
 					} else {
 						if(is_longpress1_ok) {
-							last_sheet_playing_measure_idx = -1;
+							last_sheet_playing_measure_idx = measure_idx;
 							curr_sheet_playing_measure_idx = measure_idx;
 							computeAndApplyPreviewRange();
 							TommyIntroActivity.player.MoveToMeasureBegin(measure_idx);

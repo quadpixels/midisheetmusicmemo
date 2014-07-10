@@ -175,6 +175,11 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     public int getCurrentPlayingMeasure() {
     	return curr_playing_measure_idx;
     }
+    public void resetCurrentPlayingMeasure() {
+    	curr_playing_measure_idx = -1;
+    	curr_playing_measure_shade_x_begin = 0.0f;
+    	curr_playing_measure_shade_x_end   = 0.0f;
+    }
     public float getCurrentPlayingMeasureShadeXBegin() {
     	return curr_playing_measure_shade_x_begin;
     }
