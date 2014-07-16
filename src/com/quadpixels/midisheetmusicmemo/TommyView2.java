@@ -47,6 +47,7 @@ import com.midisheetmusicmemo.SheetMusic.Vec2;
 // 2014-06-03: "Track" and "staff" are used interchangeably in this doc
 //             Added histograms to status load/save during orientation change
 // 2014-06-14: Fixed "minimize app and reopen app"
+// 2014-07-15: Fixed "quiz count doesn't increment"
 
 // onCreate is called after an orientation change.
 
@@ -2008,7 +2009,7 @@ public class TommyView2 extends View implements Runnable {
 		String hs_sz = prefs_highscores.getString(String.format("%x_HS", checksum), "");
 		Log.v("initMidiFile", "Historical Scores: " + hs_sz);
 		TommyConfig.populateHSTSArraysFromJSONString(highscores, timestamps, right_clicks_history, wrong_clicks_history, hs_sz);
-		num_times_played = prefs_quizcount.getInt(String.format("%x", checksum), 0);
+		num_times_played = prefs_quizcount.getInt(midi_uri_string, 0);
 
 		mastery_histogram_before = new int[TommyMastery.MASTERY_STATE_SCORES.length];
 		mastery_histogram_after  = new int[TommyMastery.MASTERY_STATE_SCORES.length];
