@@ -2760,7 +2760,20 @@ public class TommyIntroView extends View implements Runnable {
         Random random = new Random(System.currentTimeMillis());
         int midx = random.nextInt(sheet.getNumMeasures()), sidx = random.nextInt(sheet.getNumStaffs());
         Bitmap bmp = sheet.RenderTile(midx, sidx, 1.0f, 1.0f);
-        updateViews.setImageViewBitmap(R.id.widget_image_view, bmp);
+        Bitmap bmp1 = Bitmap.createBitmap(bmp.getWidth(), bmp.getHeight(), Bitmap.Config.RGB_565);
+        Canvas c = new Canvas(bmp1);
+        dst_mt.set(0, 0, bmp1.getWidth(), bmp1.getHeight());
+		NinePatchDrawable bk;
+		if(sidx == 0) {
+			bk = TommyConfig.getCurrentStyle().tile_bk_upper;
+		} else bk = TommyConfig.getCurrentStyle().tile_bk_lower;
+		bk.setBounds(dst_mt);
+		bk.setTargetDensity(c);
+		paint.setColor(TommyConfig.getCurrentStyle().background_color);
+		bk.draw(c);
+		c.drawBitmap(bmp, dst_mt, dst_mt, bmp_paint);
+		
+        updateViews.setImageViewBitmap(R.id.widget_image_view, bmp1);
         
         ComponentName thisWidget = new ComponentName(ctx, TommyWidget.class);
         AppWidgetManager manager = AppWidgetManager.getInstance(ctx);
