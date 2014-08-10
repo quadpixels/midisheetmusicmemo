@@ -1710,7 +1710,7 @@ public class TommyView2 extends View implements Runnable {
 				(int)(AREA1_HGT + separator_hgt), FloatingButtonType.RIGHT_BUTTON);
 		separator.bk = left_button.bk = right_button.bk = TommyConfig.getCurrentStyle().background_separator;
 		
-		final int N_COLS = 4, N_ROWS = 2;
+		final int N_COLS = 2, N_ROWS = 2;
 		final int TILEW = (int)((width-2*vert_btn_width)/N_COLS), TILEH = (int)((height*2/3 - SEPARATOR_HEIGHT - SEPARATOR_HEIGHT*density)/2);
 		tiles.clear();
 		int tile_id = 0;
@@ -1796,7 +1796,7 @@ public class TommyView2 extends View implements Runnable {
 				FloatingButtonType.RIGHT_BUTTON);
 		
 		left_button.bk = right_button.bk = separator.bk = TommyConfig.getCurrentStyle().background_separator;
-		final int N_COLS = 2, N_ROWS = 4;
+		final int N_COLS = 2, N_ROWS = 2;
 		final int TILEW = (int)(width/N_COLS), 
 				TILEH = (int)((height-AREA1_HGT-SEPARATOR_HEIGHT*density-btn_thickness)/N_ROWS);
 		tiles.clear();
