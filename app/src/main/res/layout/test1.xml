@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFCC" >
+    
+    
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+        
+	    <Button
+	        android:id="@+id/test1ButtonUp"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="↑" />
+	    
+	    <Button
+	        android:id="@+id/test1ButtonDown"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="↓" />
+	    
+	    <Button
+	        android:id="@+id/test1ButtonLeft"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="←" />
+	    
+	    <Button
+	        android:id="@+id/test1ButtonRight"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="60dp"
+	        android:layout_height="wrap_content"
+	        android:text="→" />
+
+	    <Button
+	        android:id="@+id/test1ButtonBmk"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:text="BMK" />
+        
+    </LinearLayout>
+
+    <ImageView
+ 		android:id="@+id/imageView1"
+ 		android:layout_width="match_parent"
+ 		android:layout_height="wrap_content"
+ 	/>   
+ 	
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="" />
+        
+    <com.quadpixels.midisheetmusicmemo.TommyKeyboardView
+        android:id="@+id/keyboard1"
+        android:layout_width="match_parent"
+        android:layout_height="130dp"
+        />
+    <com.quadpixels.midisheetmusicmemo.TommyKeyboardView
+        android:id="@+id/keyboard2"
+        android:layout_width="match_parent"
+        android:layout_height="130dp"
+        />
+    
+</LinearLayout>
