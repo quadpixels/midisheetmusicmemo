@@ -1,4 +1,4 @@
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
 public class Util {
 	public static int smear(int hashCode) {

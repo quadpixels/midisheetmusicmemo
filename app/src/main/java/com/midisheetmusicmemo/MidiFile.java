@@ -16,7 +16,7 @@ package com.midisheetmusicmemo;
 import java.io.*;
 import java.util.*;
 
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.R;
 
 import android.content.Context;
 import android.util.*;

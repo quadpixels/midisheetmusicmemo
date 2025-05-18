@@ -1,20 +1,15 @@
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
-import java.util.Random;
 import java.util.zip.CRC32;
 
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.PendingIntent;
-import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,7 +21,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListAdapter;
 import android.widget.RelativeLayout;
-import android.widget.RemoteViews;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -37,12 +31,12 @@ import com.midisheetmusicmemo.MidiFile;
 import com.midisheetmusicmemo.MidiOptions;
 import com.midisheetmusicmemo.MidiPlayer;
 import com.midisheetmusicmemo.MidiSheetMusicActivity;
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.R;
 import com.midisheetmusicmemo.SettingsActivity;
 import com.midisheetmusicmemo.SheetMusic;
 import com.midisheetmusicmemo.SheetMusicActivity;
 import com.midisheetmusicmemo.TimeSigSymbol;
-import com.quadpixels.midisheetmusicmemo.TommyPopupView.HelpInfos;
+import com.quadpixels.midisheetmusicmemo1.TommyPopupView.HelpInfos;
 
 // 2014-03-14 Currently rotating screen stops music (the user has to restart it) 
 public class TommyIntroActivity extends Activity {

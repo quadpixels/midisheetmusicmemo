@@ -26,7 +26,7 @@ import android.content.res.*;
 import android.media.*;
 import java.util.zip.CRC32;
 
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.R;
 
 /** @class SheetMusicActivity
  *

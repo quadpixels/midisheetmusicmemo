@@ -1,4 +1,4 @@
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -9,7 +9,7 @@ import com.midisheetmusicmemo.MidiFile;
 import com.midisheetmusicmemo.MidiOptions;
 import com.midisheetmusicmemo.MidiSheetMusicActivity;
 import com.midisheetmusicmemo.MusicSymbol;
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.R;
 import com.midisheetmusicmemo.SheetMusic;
 import com.midisheetmusicmemo.SheetMusicActivity;
 

@@ -1,4 +1,4 @@
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
 import android.graphics.drawable.NinePatchDrawable;
 

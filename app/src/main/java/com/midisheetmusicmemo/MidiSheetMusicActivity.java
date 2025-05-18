@@ -12,8 +12,8 @@
 
 package com.midisheetmusicmemo;
 
-import com.quadpixels.midisheetmusicmemo.R;
-import com.quadpixels.midisheetmusicmemo.TestActivity;
+import com.quadpixels.midisheetmusicmemo1.R;
+import com.quadpixels.midisheetmusicmemo1.TestActivity;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -21,11 +21,8 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
-import android.widget.LinearLayout.LayoutParams;
 import android.content.*;
 import android.content.SharedPreferences.Editor;
-import android.content.res.*;
-import android.graphics.*;
 
 /** @class MidiSheetMusicActivity
  * This is the launch activity for MidiSheetMusic.

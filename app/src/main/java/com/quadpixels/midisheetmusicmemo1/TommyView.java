@@ -12,9 +12,8 @@
 // Fundamental change:
 //  Graph-based model.... ?!
 //
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,21 +25,19 @@ import com.midisheetmusicmemo.MidiFile;
 import com.midisheetmusicmemo.MidiSheetMusicActivity;
 import com.midisheetmusicmemo.SheetMusic;
 import com.midisheetmusicmemo.SheetMusic.Vec2;
-import com.quadpixels.midisheetmusicmemo.R;
-import com.quadpixels.midisheetmusicmemo.R.drawable;
+import com.quadpixels.midisheetmusicmemo1.R;
+import com.quadpixels.midisheetmusicmemo1.R.drawable;
 
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.NinePatch;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
 import android.graphics.Rect;
 import android.graphics.drawable.NinePatchDrawable;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;

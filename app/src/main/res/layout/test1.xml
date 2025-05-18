@@ -60,12 +60,12 @@
         android:layout_height="wrap_content"
         android:text="" />
         
-    <com.quadpixels.midisheetmusicmemo.TommyKeyboardView
+    <com.quadpixels.midisheetmusicmemo1.TommyKeyboardView
         android:id="@+id/keyboard1"
         android:layout_width="match_parent"
         android:layout_height="130dp"
         />
-    <com.quadpixels.midisheetmusicmemo.TommyKeyboardView
+    <com.quadpixels.midisheetmusicmemo1.TommyKeyboardView
         android:id="@+id/keyboard2"
         android:layout_width="match_parent"
         android:layout_height="130dp"

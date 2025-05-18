@@ -1,4 +1,4 @@
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
 import java.util.zip.CRC32;
 
@@ -19,7 +19,7 @@ import com.midisheetmusicmemo.MidiFile;
 import com.midisheetmusicmemo.MidiOptions;
 import com.midisheetmusicmemo.MidiSheetMusicActivity;
 import com.midisheetmusicmemo.SheetMusicActivity;
-import com.quadpixels.midisheetmusicmemo.TommyPopupView.HelpInfos;
+import com.quadpixels.midisheetmusicmemo1.TommyPopupView.HelpInfos;
 
 public class TommyView2Activity extends Activity {
 	TommyView2 tommyview = null;

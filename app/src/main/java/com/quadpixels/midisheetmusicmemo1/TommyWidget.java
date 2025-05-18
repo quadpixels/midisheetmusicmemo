@@ -1,48 +1,19 @@
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import com.midisheetmusicmemo.ClefSymbol;
-import com.midisheetmusicmemo.FileUri;
-import com.midisheetmusicmemo.MidiFile;
-import com.midisheetmusicmemo.MidiFileException;
-import com.midisheetmusicmemo.MidiOptions;
-import com.midisheetmusicmemo.MidiPlayer;
 import com.midisheetmusicmemo.MidiSheetMusicActivity;
-import com.quadpixels.midisheetmusicmemo.R;
-import com.midisheetmusicmemo.SheetMusic;
-import com.midisheetmusicmemo.SheetMusicActivity;
-import com.midisheetmusicmemo.TimeSigSymbol;
+import com.quadpixels.midisheetmusicmemo1.R;
 
 import android.app.PendingIntent;
 import android.app.Service;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.res.AssetManager;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.IBinder;
-import android.text.format.Time;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RemoteViews;
-import android.widget.Toast;
 
 public class TommyWidget extends AppWidgetProvider {	
 	static float density = 1.0f;

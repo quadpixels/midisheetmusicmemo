@@ -9,10 +9,9 @@
 //                      Solved: using "expanding previews".
 // Issue on 2014-06-23: Screen flickers after transition is done
 
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
 import java.util.ArrayList;
-import java.util.Currency;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -52,7 +51,7 @@ import android.widget.RemoteViews;
 import com.midisheetmusicmemo.MidiFile;
 import com.midisheetmusicmemo.MidiOptions;
 import com.midisheetmusicmemo.MidiSheetMusicActivity;
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.R;
 import com.midisheetmusicmemo.SheetMusic;
 import com.midisheetmusicmemo.SheetMusicActivity;
 import com.midisheetmusicmemo.SheetMusic.Vec2;

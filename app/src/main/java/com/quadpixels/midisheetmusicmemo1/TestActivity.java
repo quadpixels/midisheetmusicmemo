@@ -1,13 +1,12 @@
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
 import com.midisheetmusicmemo.ClefSymbol;
 import com.midisheetmusicmemo.MidiPlayer;
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.R;
 import com.midisheetmusicmemo.TimeSigSymbol;
 
 import android.app.Activity;

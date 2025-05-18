@@ -26,7 +26,7 @@
     <string name="combine_interval">合并间距</string>
     <string name="combine_interval_summary">如果有一些音符之间的间距在合并间距以内（单位为毫秒），就会被合成为一个和弦。</string>
     <string name="right_hand_color">右手音符颜色</string>
-    <string name="left_hand_color">手音符颜色</string>
+    <string name="left_hand_color">左手音符颜色</string>
     <string name="show_measures">显示小节号</string>
     <string name="play_measures_in_loop_title">循环的小节设置</string>
     <string name="play_measures_in_loop">是否指定范围内循环播放</string>

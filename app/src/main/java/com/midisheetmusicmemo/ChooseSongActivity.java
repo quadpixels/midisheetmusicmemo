@@ -22,10 +22,10 @@ import android.content.*;
 
 import org.json.*;
 
-import com.quadpixels.midisheetmusicmemo.TommyConfig;
-import com.quadpixels.midisheetmusicmemo.TommyIntroActivity;
-import com.quadpixels.midisheetmusicmemo.TommyPlaygroundActivity;
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.TommyConfig;
+import com.quadpixels.midisheetmusicmemo1.TommyIntroActivity;
+import com.quadpixels.midisheetmusicmemo1.TommyPlaygroundActivity;
+import com.quadpixels.midisheetmusicmemo1.R;
 
 import android.graphics.*;
 import android.graphics.drawable.*;

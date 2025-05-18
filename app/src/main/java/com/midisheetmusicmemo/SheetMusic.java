@@ -14,19 +14,16 @@ package com.midisheetmusicmemo;
 
 import java.util.*;
 import java.io.*;
-import com.quadpixels.midisheetmusicmemo.TommyConfig;
-import com.quadpixels.midisheetmusicmemo.TommyIntroActivity;
-import com.quadpixels.midisheetmusicmemo.TommyView2Activity;
+import com.quadpixels.midisheetmusicmemo1.TommyConfig;
+import com.quadpixels.midisheetmusicmemo1.TommyIntroActivity;
+import com.quadpixels.midisheetmusicmemo1.TommyView2Activity;
 import android.annotation.SuppressLint;
-import android.app.*;
 import android.content.*;
 import android.graphics.*;
 import android.graphics.Bitmap.Config;
 import android.graphics.Paint.Style;
-import android.os.*;
 import android.util.Log;
 import android.view.*;
-import android.view.animation.AnimationUtils;
 
 /** @class BoxedInt **/
 class BoxedInt {
@@ -2078,6 +2075,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 
     @Override
     public String toString() {
+        if (staffs == null || staffs.isEmpty()) return "";  // For aln-al00 ?
         String result = "SheetMusic staffs=" + staffs.size() + "\n";
         for (Staff staff : staffs) {
             result += staff.toString();

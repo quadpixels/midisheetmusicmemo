@@ -9,7 +9,7 @@
         android:background="#737373"
         >
 
-<com.quadpixels.midisheetmusicmemo.SquareLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.quadpixels.midisheetmusicmemo1.SquareLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/intro_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -67,7 +67,7 @@
 	        android:text="List SharedPreferences"
 	        android:visibility="gone" />
 	    
-	    </com.quadpixels.midisheetmusicmemo.SquareLinearLayout>
+	    </com.quadpixels.midisheetmusicmemo1.SquareLinearLayout>
 	    
 
     </LinearLayout>

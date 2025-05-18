@@ -15,8 +15,8 @@ package com.midisheetmusicmemo;
 import java.util.*;
 import java.io.*;
 
-import com.quadpixels.midisheetmusicmemo.TommyIntroActivity;
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.TommyIntroActivity;
+import com.quadpixels.midisheetmusicmemo1.R;
 
 import android.app.*;
 import android.content.*;

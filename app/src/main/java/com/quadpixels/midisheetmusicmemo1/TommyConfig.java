@@ -1,4 +1,4 @@
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,8 +6,8 @@ import java.util.Collections;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import com.quadpixels.midisheetmusicmemo.R;
-import com.quadpixels.midisheetmusicmemo.R.*;
+import com.quadpixels.midisheetmusicmemo1.R;
+import com.quadpixels.midisheetmusicmemo1.R.*;
 
 import android.content.Context;
 import android.graphics.Bitmap;

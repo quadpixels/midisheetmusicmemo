@@ -1,10 +1,10 @@
 // 2014-05-07 Start contemplating readme overlay view
 
-package com.quadpixels.midisheetmusicmemo;
+package com.quadpixels.midisheetmusicmemo1;
 
 import com.midisheetmusicmemo.MidiSheetMusicActivity;
-import com.quadpixels.midisheetmusicmemo.R;
-import com.quadpixels.midisheetmusicmemo.R.string;
+import com.quadpixels.midisheetmusicmemo1.R;
+import com.quadpixels.midisheetmusicmemo1.R.string;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -14,8 +14,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
-import android.graphics.PorterDuff.Mode;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.text.Layout.Alignment;
 import android.text.StaticLayout;
@@ -23,7 +21,6 @@ import android.text.TextPaint;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.View.MeasureSpec;
 import android.view.ViewGroup;
 
 public class TommyPopupView extends View {

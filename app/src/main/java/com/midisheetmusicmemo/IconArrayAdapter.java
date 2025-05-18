@@ -14,11 +14,10 @@ package com.midisheetmusicmemo;
 
 import java.util.*;
 
-import com.quadpixels.midisheetmusicmemo.TommyConfig;
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.TommyConfig;
+import com.quadpixels.midisheetmusicmemo1.R;
 
 import android.widget.*;
-import android.util.Log;
 import android.view.*;
 import android.content.*;
 import android.content.res.*;

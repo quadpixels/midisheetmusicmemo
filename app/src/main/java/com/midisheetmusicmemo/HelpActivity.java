@@ -12,7 +12,7 @@
 
 package com.midisheetmusicmemo;
 
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.R;
 
 import android.app.Activity;
 import android.content.Context;

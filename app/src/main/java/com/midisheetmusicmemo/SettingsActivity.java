@@ -13,8 +13,8 @@
 
 package com.midisheetmusicmemo;
 
-import com.quadpixels.midisheetmusicmemo.TommyConfig;
-import com.quadpixels.midisheetmusicmemo.R;
+import com.quadpixels.midisheetmusicmemo1.TommyConfig;
+import com.quadpixels.midisheetmusicmemo1.R;
 
 import android.app.*;
 import android.content.*;
@@ -22,8 +22,6 @@ import android.content.SharedPreferences.Editor;
 import android.os.*;
 import android.preference.*;
 import android.widget.Toast;
-import android.graphics.*;
-import android.graphics.drawable.ColorDrawable;
 
 
 /** @class SettingsActivity
