@@ -17,19 +17,21 @@ import android.content.res.*;
 import java.io.*;
 import java.util.*;
 import android.net.*;
-import android.provider.*;
+
 import org.json.*;
 import android.app.Activity;
 
-/** @class FileUri
+import androidx.annotation.NonNull;
+
+/** {@code @class} FileUri
  * Represents a reference to a file.
  * The file could be either in the /assets directory, 
  * the internal storage, or the external storage.
  */
 public class FileUri implements Comparator<FileUri> {
-    private Uri uri;                  /** The URI path to the file */
-    private String displayName;       /** The name to display */
-    private boolean directory;        /** Whether this Uri points to a directory */
+    private final Uri uri;                  /** The URI path to the file */
+    private final String displayName;       /** The name to display */
+    private final boolean directory;
 
     /** Create a Uri with the given display name */
     public FileUri(Uri uri, String path) {
@@ -64,6 +66,7 @@ public class FileUri implements Comparator<FileUri> {
     }
 
     /** Return the display name */
+    @NonNull
     public String toString() {
         return displayName;
     }
@@ -112,6 +115,7 @@ public class FileUri implements Comparator<FileUri> {
                 file = new FileInputStream(uri.getPath());
             }
             totallen = 0;
+            assert file != null;
             len = file.read(data, 0, 4096);
             while (len > 0) {
                 totallen += len;
@@ -136,12 +140,14 @@ public class FileUri implements Comparator<FileUri> {
                 file = new FileInputStream(uri.getPath());
             }
             while (offset < totallen) {
+                assert file != null;
                 len = file.read(data, offset, totallen - offset);
                 if (len <= 0) {
                     throw new MidiFileException("Error reading midi file", offset);
                 }
                 offset += len;
             }
+            assert file != null;
             file.close();
             return data;
         }
@@ -158,23 +164,17 @@ public class FileUri implements Comparator<FileUri> {
             json.put("displayName", displayName);
             return json;
         }
-        catch (JSONException e) {
-            return null;
-        }
-        catch (NullPointerException e) {
+        catch (JSONException | NullPointerException e) {
             return null;
         }
     }
 
     /* Initialize this URI from a json string */
-    public static FileUri fromJson(JSONObject obj, Activity activity) {
+    public static FileUri fromJson(JSONObject obj) {
         try {
-            String displayName = obj.optString("displayName", null);
-            String uriString = obj.optString("uri", null);
+            String displayName = obj.optString("displayName", "");
+            String uriString = obj.optString("uri", "");
 
-            if (displayName == null || uriString == null) {
-                return null;
-            }
             Uri uri = Uri.parse(uriString);
             return new FileUri(uri, displayName);
         }
@@ -188,7 +188,7 @@ public class FileUri implements Comparator<FileUri> {
             (s1 != null && s2 == null)) {
             return false;
         }
-        if (s1 == null && s2 == null) {
+        if (s1 == null) {
             return true;
         }
         return s1.equals(s2);
@@ -196,11 +196,11 @@ public class FileUri implements Comparator<FileUri> {
     
     /* Return true if the two FileUri json objects are equal */
     public static boolean equalJson(JSONObject obj1, JSONObject obj2) {
-        String displayName1 = obj1.optString("displayName", null);
-        String uriString1 = obj1.optString("uri", null);
+        String displayName1 = obj1.optString("displayName", "");
+        String uriString1 = obj1.optString("uri", "");
 
-        String displayName2 = obj2.optString("displayName", null);
-        String uriString2 = obj2.optString("uri", null);
+        String displayName2 = obj2.optString("displayName", "");
+        String uriString2 = obj2.optString("uri", "");
 
         return (equalStrings(displayName1, displayName2) &&
                 equalStrings(uriString1, uriString2) );

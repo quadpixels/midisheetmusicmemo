@@ -34,10 +34,8 @@ public class FileBrowserActivity extends ListActivity {
     private static final int REQUEST_OPEN_DOCUMENT_TREE = 1001;
     private static final String PREF_TREE_URI = "safTreeUri";
 
-    private ArrayList<FileUri> filelist; /* List of files in the directory */
     private ArrayList<DocumentFile> browseTargets; /* Backing DocumentFile list */
     private TextView directoryView;      /* TextView showing directory name */
-    private IconArrayAdapter<FileUri> adapter;
 
     private Uri rootTreeUri;
 
@@ -48,13 +46,8 @@ public class FileBrowserActivity extends ListActivity {
         setContentView(R.layout.file_browser);
         setTitle("MidiSheetMusic: Browse Files");
 
-        directoryView = (TextView) findViewById(R.id.directory);
-        directoryView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                requestRootFolder();
-            }
-        });
+        directoryView = findViewById(R.id.directory);
+        directoryView.setOnClickListener(v -> requestRootFolder());
     }
 
     @Override
@@ -112,8 +105,11 @@ public class FileBrowserActivity extends ListActivity {
         }
 
         Uri treeUri = data.getData();
-        int takeFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION |
-                                           Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        int takeFlags = data.getFlags() & (Intent.FLAG_GRANT_READ_URI_PERMISSION
+                | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        if ((takeFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION) == 0) {
+            takeFlags |= Intent.FLAG_GRANT_READ_URI_PERMISSION;
+        }
         try {
             getContentResolver().takePersistableUriPermission(treeUri, takeFlags);
         }
@@ -131,7 +127,7 @@ public class FileBrowserActivity extends ListActivity {
         }
     }
 
-    /* Scan the files in the new directory, and store them in the filelist.
+    /* Scan the files in the new directory, and store them in the fileList.
      * Update the UI by refreshing the list adapter.
      */
     private void loadDirectory(DocumentFile directory) {
@@ -142,12 +138,13 @@ public class FileBrowserActivity extends ListActivity {
 
         directoryView.setText(getDirectoryTitle(directory));
 
-        filelist = new ArrayList<FileUri>();
-        browseTargets = new ArrayList<DocumentFile>();
-        ArrayList<FileUri> sortedDirs = new ArrayList<FileUri>();
-        ArrayList<FileUri> sortedFiles = new ArrayList<FileUri>();
-        ArrayList<DocumentFile> sortedDirTargets = new ArrayList<DocumentFile>();
-        ArrayList<DocumentFile> sortedFileTargets = new ArrayList<DocumentFile>();
+        /* List of files in the directory */
+        ArrayList<FileUri> fileList = new ArrayList<>();
+        browseTargets = new ArrayList<>();
+        ArrayList<FileUri> sortedDirs = new ArrayList<>();
+        ArrayList<FileUri> sortedFiles = new ArrayList<>();
+        ArrayList<DocumentFile> sortedDirTargets = new ArrayList<>();
+        ArrayList<DocumentFile> sortedFileTargets = new ArrayList<>();
 
         DocumentFile parent = directory.getParentFile();
         if (parent != null && !isRootDirectory(directory)) {
@@ -175,18 +172,21 @@ public class FileBrowserActivity extends ListActivity {
                 sortedDirs.add(new FileUri(entry.getUri(), name, true));
                 sortedDirTargets.add(entry);
             }
-            else if (isMidiFilename(name)) {
-                sortedFiles.add(new FileUri(entry.getUri(), name, false));
-                sortedFileTargets.add(entry);
+            else {
+                assert name != null;
+                if (isMidiFilename(name)) {
+                    sortedFiles.add(new FileUri(entry.getUri(), name, false));
+                    sortedFileTargets.add(entry);
+                }
             }
         }
         sortEntries(sortedDirs, sortedDirTargets);
         sortEntries(sortedFiles, sortedFileTargets);
-        filelist.addAll(sortedDirs);
-        filelist.addAll(sortedFiles);
+        fileList.addAll(sortedDirs);
+        fileList.addAll(sortedFiles);
         browseTargets.addAll(sortedDirTargets);
         browseTargets.addAll(sortedFileTargets);
-        adapter = new IconArrayAdapter<FileUri>(this, android.R.layout.simple_list_item_1, filelist);
+        IconArrayAdapter<FileUri> adapter = new IconArrayAdapter<>(this, android.R.layout.simple_list_item_1, fileList);
         this.setListAdapter(adapter);
     }
 
@@ -217,7 +217,7 @@ public class FileBrowserActivity extends ListActivity {
 
     private String getDirectoryTitle(DocumentFile directory) {
         String name = directory.getName();
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             name = directory.getUri().toString();
         }
         return name + " (tap here to change folder)";
@@ -237,7 +237,6 @@ public class FileBrowserActivity extends ListActivity {
             if (target != null && target.canRead() && target.isDirectory()) {
                 this.loadDirectory(target);
             }
-            return;
         }
         else {
             ChooseSongActivity.openFile(file);
