@@ -79,7 +79,7 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
          FileUri file = (FileUri) this.getItem(position);
          if (file.isDirectory()) {
              image.setImageBitmap(directoryIcon);
-             text.setText(file.getUri().getPath());
+             text.setText(file.toString());
              tommy_text.setText("");
          }
          else {
@@ -118,4 +118,3 @@ class IconArrayAdapter<T> extends ArrayAdapter<T> {
          return convertView;
     }
 }
-

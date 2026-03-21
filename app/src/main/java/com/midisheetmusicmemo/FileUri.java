@@ -29,14 +29,29 @@ import android.app.Activity;
 public class FileUri implements Comparator<FileUri> {
     private Uri uri;                  /** The URI path to the file */
     private String displayName;       /** The name to display */
+    private boolean directory;        /** Whether this Uri points to a directory */
 
     /** Create a Uri with the given display name */
     public FileUri(Uri uri, String path) {
+        this(uri, path, inferDirectory(uri, path));
+    }
+
+    /** Create a Uri with the given display name and type */
+    public FileUri(Uri uri, String path, boolean isDirectory) {
         this.uri = uri;
         if (path == null) {
             path = uri.getLastPathSegment();
         }
         displayName = displayNameFromPath(path);
+        directory = isDirectory;
+    }
+
+    private static boolean inferDirectory(Uri uri, String path) {
+        if (path != null && path.endsWith("/")) {
+            return true;
+        }
+        String uriString = (uri == null ? null : uri.toString());
+        return uriString != null && uriString.endsWith("/");
     }
 
     /** Given a path name, return a display name */
@@ -59,13 +74,7 @@ public class FileUri implements Comparator<FileUri> {
 
     /** Return true if this is a directory */
     public boolean isDirectory() {
-        String path = uri.getPath();
-        if (path != null && path.endsWith("/")) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        return directory;
     }
 
     /** Return the uri */
@@ -197,4 +206,3 @@ public class FileUri implements Comparator<FileUri> {
                 equalStrings(uriString1, uriString2) );
     }
 }
-
