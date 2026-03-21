@@ -520,6 +520,9 @@ public class Staff {
     		}
 			
 			ArrayList<Integer> symidxs = getNotesInMeasure(measureIdx);
+            if (measureIdx == 56) {
+                Log.v("[DrawMeasure]", String.format("%d symidxs", symidxs.size()));
+            }
 			
 			if(symidxs.size() > 0) {
 				each_x_padding = total_x_padding / (1.0f*symidxs.size());
@@ -546,6 +549,9 @@ public class Staff {
     	}
     	
     	ret.x = (int)xmin; ret.y = (int)xmax;
+        if (measureIdx == 56) {
+            Log.v("DrawMeasure" , String.format("xmin=%f, xmax=%f", xmin, xmax));
+        }
     	return ret;
     }
 

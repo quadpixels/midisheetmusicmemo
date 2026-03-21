@@ -116,6 +116,9 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     private ArrayList<Integer> measureHeights = new ArrayList<Integer>();
     private ArrayList<Integer> measureWidths  = new ArrayList<Integer>();
     private ArrayList<Float>   measureOverflowZooms = new ArrayList<Float>();
+    public float getMeasureOverflowZoom(int measure_idx) {
+        return measureOverflowZooms.get(measure_idx);
+    }
     private ArrayList<Float>  measurePads = new ArrayList<Float>();
     private int num_notes = 0;
     public int getNumNotes() { return num_notes; }
@@ -1548,7 +1551,7 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 	    				{
 				    		if(j == line_end_idx - 1 && j>0) {
 				    			xlim = f.DrawMeasure(null, j, paint, false, 0.0f);
-				    			this_pad = line_width - (xlim.y - xlim.x) - currx; 
+				    			this_pad = Math.max(0, line_width - (xlim.y - xlim.x) - currx);
 				    		} else if(j==0) {
 				    			if(is_first_measure_out_of_boundingbox) {
 				    				this_pad = 0;
@@ -1568,6 +1571,9 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 				    		else { xlim = f.DrawMeasure(null, j, paint, false, 0); }
 			    			if(j > 0 || is_first_measure_out_of_boundingbox==false)
 			    				currx = currx + xlim.y - xlim.x;
+                            Log.v("SheetMusic new",
+                                    String.format("xlim=(%d,%d)",
+                                            xlim.x, xlim.y));
 	    				}
 			    		
 			    		// Create bitmap for measure #i
@@ -1578,9 +1584,11 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 			    		if(f == staffs.get(0)) {
 			    			measureWidths.add(W);
 			    		}
-			    		
-			    		
-	    			}
+
+                        Log.v("SheetMusic new",
+                                String.format("measure %d, scratch_w updated to %d",
+                                        i, scratch_width));
+                    }
 	    			line_begin_idx = line_end_idx;
     			}
 	    	}
@@ -1589,16 +1597,19 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 	    	if(scratch_height < f.getHeight()) scratch_height = f.getHeight();
     	}
 
-    	Log.v("SheetMusic new", "Creating all beamed chords" + time_signature);
     	CreateAllBeamedChords(this.allsymbols, this.time_signature);
     	
     	// When the user wants to resize
+    	int scratchTargetWidth = Math.max(line_width, scratch_width);
     	if(scratch != null && scratch.isRecycled()==false) {
     		scratch.recycle(); scratch = null;
-    		scratch = Bitmap.createBitmap(line_width, scratch_height, Config.RGB_565);
+    		scratch = Bitmap.createBitmap(scratchTargetWidth, scratch_height, Config.RGB_565);
     	}
     	if(scratch == null && scratch_width > 0 && scratch_height > 0) 
-    		scratch = Bitmap.createBitmap(line_width, scratch_height, Config.RGB_565);
+    		scratch = Bitmap.createBitmap(scratchTargetWidth, scratch_height, Config.RGB_565);
+
+        Log.v("SheetMusic new",
+                "Creating all beamed chords" + time_signature + ", scratch_w="+scratchTargetWidth);
     }
     
     
@@ -2085,4 +2096,3 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     }
 
 }
-

@@ -586,12 +586,18 @@ public class TommyIntroView extends View implements Runnable {
 			int uid = view.getTileUIDFromMidSid(measure_idx, staff_idx);
 			if(cached_bmps.containsKey(uid) == false) {
 				if(is_synchronous) {
+                    if (staff_idx == 0 && measure_idx == 56) {
+                        Log.v("GetTileBitmap", "My debug trap");
+                    }
 					Bitmap bmp = sheet.RenderTile(measure_idx, staff_idx, bitmap_zoom, bitmap_zoom);
 					bytes_consumed += bmp.getHeight() * bmp.getWidth() * 2; // RGB 565, 1 pixel = 2 bytes
 					synchronized(cached_bmps) {
 						cached_bmps.put(uid, bmp);
 					}
 				} else {
+                    if (staff_idx == 0 && measure_idx == 56) {
+                        Log.v("GetTileBitmap", "My debug trap");
+                    }
 					requestTileBitmap(staff_idx, measure_idx);
 				}
 			}
@@ -731,6 +737,11 @@ public class TommyIntroView extends View implements Runnable {
 			
 				boolean is_success = true;
 				synchronized(bitmap_helper) {
+                    Log.v("LineBitmapHelper", String.format("lidx=%d, idx0=%d,%d",
+                            lidx, idx0_start, idx0_end));
+                    if (lidx == 46) {
+                        Log.v("LineBitmapHelper", "My Debug Trap");
+                    }
 					for(int idx0=idx0_start; idx0 < idx0_end; idx0++) {
 						MeasureTile mt = measure_tiles.get(idx0);
 						if(is_success) {
@@ -2297,13 +2308,14 @@ public class TommyIntroView extends View implements Runnable {
 				paint.setStyle(Style.FILL);
 				paint.setColor(TommyConfig.getCurrentStyle().highlight_color);
 				paint.setAlpha(32);
-				int y1 = (y0+H > height) ? height : y0+H;
+				int y1 = Math.min(y0 + H, height);
 				c.drawRect(x, y0, x+W, y1, paint);
 				
 				paint.setAlpha(64);
 				
 				float x_mult = bitmap_helper.bitmap_zoom;
-				
+				x_mult *= sheet.getMeasureOverflowZoom(measure_idx);
+
 				float dx1 = x_mult * curr_sheet_playing_measure_shade_x_begin;
 				float dx2 = x_mult * curr_sheet_playing_measure_shade_x_end;
 				c.drawRect(x+dx1, y0, x+dx2, y1, paint);
@@ -2369,7 +2381,9 @@ public class TommyIntroView extends View implements Runnable {
 				if(bmp != null && !bmp.isRecycled()) {
 					bmp_paint.setFilterBitmap(true);
 					int bw = bmp.getWidth(), bh = bmp.getHeight();
-					dst_mt.set(x+deltay,y0+deltay,x+W-deltay,y0+H-deltay);
+                    int target_bw = c.getWidth();
+					dst_mt.set(x+deltay,y0+deltay,
+                            x+Math.min(W, target_bw)-deltay,y0+H-deltay);
 					NinePatchDrawable bk;
 					if(staff_idx == 0) {
 						bk = TommyConfig.getCurrentStyle().tile_bk_upper;
