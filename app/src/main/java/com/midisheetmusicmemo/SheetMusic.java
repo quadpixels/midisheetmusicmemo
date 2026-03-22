@@ -1489,28 +1489,28 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 	    		if(i==num_measures - 1) { line_end_idx = num_measures; }
 	    		int pad_right = 0;
 	    		
-	    		if(i==0) { xlim = f.DrawMeasure(null, i, paint, true, 0.0f); }
-	    		else { xlim = f.DrawMeasure(null, i, paint, false, 0.0f); }
+		    		if(i==0) { xlim = f.DrawMeasure(null, i, paint, true, 0.0f); }
+		    		else { xlim = f.DrawMeasure(null, i, paint, false, 0.0f); }
     			
 //    			Log.v("SheetMusic", String.format("Measure %d, width=%d/%d", i, xlim.y - xlim.x, line_width));
     			
     			// 把右边补齐
     			pad_right = 0;
     			if(i>0) {
-	    			if(x+xlim.y - xlim.x > line_width) {
-	    				if(x!=0) {
-		    				pad_right = line_width - x;
+		    			if(x+xlim.y - xlim.x > line_width) {
+		    				if(x!=0) {
+			    				pad_right = line_width - x;
 //		    				Log.v("SheetMusic", String.format("pad_right=%d, i=%d", pad_right, i));
 		    				x = 0;
 	    					line_end_idx = i;
 	    					i--; // Re-layout this measure
-	    				} else {
- 	    					line_end_idx = i+1;
- 	    					line_need_shrinkzoom = true;
- 	    					line_shrink_zoom = 1.0f * line_width / (xlim.y-xlim.x); 
-	    				}
-	    			} else { 
-	    				x = x + (xlim.y - xlim.x); 
+		    				} else {
+	 	    					line_end_idx = i+1;
+	 	    					line_need_shrinkzoom = true;
+	 	    					line_shrink_zoom = 1.0f * line_width / (xlim.y-xlim.x); 
+		    				}
+		    			} else { 
+		    				x = x + (xlim.y - xlim.x); 
 	    			}
     			} else {
     				if(is_first_measure_out_of_boundingbox == false) {
@@ -1518,15 +1518,15 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     				}
     			}
     			
-    			if(line_end_idx != -1) {
-    				int currx = 0;
-    				int measures_in_line = line_end_idx - line_begin_idx;
-    				if(is_first_measure_out_of_boundingbox == true) {
-    					if(line_begin_idx == 0) { measures_in_line = measures_in_line - 1; }
-    				}
-    				float each_pad = (pad_right * 1.0f / (1.0f * measures_in_line));
-	    			for(int j=line_begin_idx; j<line_end_idx; j++) {
-	    				int ypos = 5, ymax = 0;
+	    			if(line_end_idx != -1) {
+	    				int currx = 0;
+	    				int measures_in_line = line_end_idx - line_begin_idx;
+	    				if(is_first_measure_out_of_boundingbox == true) {
+	    					if(line_begin_idx == 0) { measures_in_line = measures_in_line - 1; }
+	    				}
+	    				float each_pad = (pad_right * 1.0f / (1.0f * measures_in_line));
+		    			for(int j=line_begin_idx; j<line_end_idx; j++) {
+	    					int ypos = 5, ymax = 0;
 	    				
 		    			// Compute Hash
 	    				{
@@ -1547,50 +1547,46 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 				    		staffHashes.add(syms_hash);
 	    				}
 
-	    				float this_pad = Float.NaN;
-	    				{
-				    		if(j == line_end_idx - 1 && j>0) {
-				    			xlim = f.DrawMeasure(null, j, paint, false, 0.0f);
-				    			this_pad = Math.max(0, line_width - (xlim.y - xlim.x) - currx);
-				    		} else if(j==0) {
+		    				float this_pad = Float.NaN;
+		    				{
+					    		if(j == line_end_idx - 1 && j>0) {
+					    			xlim = f.DrawMeasure(null, j, paint, false, 0.0f);
+					    			this_pad = Math.max(0, line_width - (xlim.y - xlim.x) - currx);
+					    		} else if(j==0) {
 				    			if(is_first_measure_out_of_boundingbox) {
 				    				this_pad = 0;
 				    			} else this_pad = each_pad;
 				    		} else {
 				    			this_pad = each_pad;
-				    		}
-				    		
-				    		if(f==staffs.get(0)) {
-				    			measurePads.add(0.f);
-				    			measureOverflowZooms.add(line_shrink_zoom);
-				    		}
-				    		
-				    		f.PadMeasure(j, this_pad);
-				    		
-				    		if(j==0) { xlim = f.DrawMeasure(null, j, paint, true, 0); }
-				    		else { xlim = f.DrawMeasure(null, j, paint, false, 0); }
+					    		}
+
+					    		if(f==staffs.get(0)) {
+					    			measurePads.add(0.f);
+					    			measureOverflowZooms.add(line_shrink_zoom);
+					    		}
+					    		
+					    		f.PadMeasure(j, this_pad);
+					    		
+					    		if(j==0) { xlim = f.DrawMeasure(null, j, paint, true, 0); }
+					    		else { xlim = f.DrawMeasure(null, j, paint, false, 0); }
 			    			if(j > 0 || is_first_measure_out_of_boundingbox==false)
 			    				currx = currx + xlim.y - xlim.x;
-                            Log.v("SheetMusic new",
-                                    String.format("xlim=(%d,%d)",
-                                            xlim.x, xlim.y));
-	    				}
-			    		
-			    		// Create bitmap for measure #i
-			    		int W = xlim.y - xlim.x;
-			    		int H = ymax;
+		    				}
+				    		
+				    		// Create bitmap for measure #i
+				    		int W = xlim.y - xlim.x;
+				    		int H = ymax;
 			    		
 			    		if(scratch_width < W) scratch_width = W;
-			    		if(f == staffs.get(0)) {
-			    			measureWidths.add(W);
-			    		}
-
-                        Log.v("SheetMusic new",
-                                String.format("measure %d, scratch_w updated to %d",
-                                        i, scratch_width));
+				    		if(f == staffs.get(0)) {
+				    			measureWidths.add(W);
+				    		}
+                        }
+		    			line_begin_idx = line_end_idx;
+                        line_end_idx = -1;
+                        line_need_shrinkzoom = false;
+                        line_shrink_zoom = 1.0f;
                     }
-	    			line_begin_idx = line_end_idx;
-    			}
 	    	}
 	    	measureHashes.add(staffHashes);
 	    	measureHeights.add(f.getHeight());

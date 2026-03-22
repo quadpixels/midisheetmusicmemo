@@ -36,7 +36,7 @@ public class TommyPlaygroundActivity extends Activity {
 	Bitmap curr_tile = null;
 	int measure_idx = 0, staff_idx = 0, nupds;
 	int NUM_MEASURES = 0, NUM_STAFFS = 0;
-	Button btnU, btnD, btnL, btnR, btnBMK;
+	Button btnU, btnD, btnL, btnR, btnL10, btnR10, btnBMK;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +100,8 @@ public class TommyPlaygroundActivity extends Activity {
 		btnD = (Button) findViewById(R.id.test1ButtonDown);
 		btnL = (Button) findViewById(R.id.test1ButtonLeft);
 		btnR = (Button) findViewById(R.id.test1ButtonRight);
+        btnL10 = (Button) findViewById(R.id.test1ButtonLeft10);
+        btnR10 = (Button) findViewById(R.id.test1ButtonRight10);
 		btnBMK = (Button)findViewById(R.id.test1ButtonBmk);
 		
 		btnU.setOnClickListener(new View.OnClickListener() {
@@ -122,13 +124,27 @@ public class TommyPlaygroundActivity extends Activity {
 				onStaffMeasureIdxesChange(0, -1);
 			}
 		});
-		
-		btnR.setOnClickListener(new View.OnClickListener() {
+
+        btnL10.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onStaffMeasureIdxesChange(0, -10);
+            }
+        });
+
+        btnR.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				onStaffMeasureIdxesChange(0, 1);
 			}
 		});
+
+        btnR10.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onStaffMeasureIdxesChange(0, 10);
+            }
+        });
 		
 		btnBMK.setOnClickListener(new View.OnClickListener() {
 			@Override

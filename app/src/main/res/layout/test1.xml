@@ -10,8 +10,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
-        
-	    <Button
+
+        <Button
 	        android:id="@+id/test1ButtonUp"
 	        style="?android:attr/buttonStyleSmall"
 	        android:layout_width="60dp"
@@ -39,36 +39,74 @@
 	        android:layout_height="wrap_content"
 	        android:text="→" />
 
-	    <Button
+        <Button
 	        android:id="@+id/test1ButtonBmk"
 	        style="?android:attr/buttonStyleSmall"
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:text="BMK" />
-        
+
     </LinearLayout>
 
-    <ImageView
- 		android:id="@+id/imageView1"
- 		android:layout_width="match_parent"
- 		android:layout_height="wrap_content"
- 	/>   
- 	
-    <TextView
-        android:id="@+id/textView1"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="" />
-        
-    <com.quadpixels.midisheetmusicmemo1.TommyKeyboardView
-        android:id="@+id/keyboard1"
+        android:orientation="horizontal">
+
+        <Space
+            android:layout_width="120dp"
+            android:layout_height="30dp"
+            android:layout_weight="0" />
+
+        <Button
+            android:id="@+id/test1ButtonLeft10"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
+            android:text="←10" />
+
+        <Button
+            android:id="@+id/test1ButtonRight10"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:paddingLeft="0dp"
+            android:paddingRight="0dp"
+            android:text="→10" />
+    </LinearLayout>
+
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="130dp"
-        />
-    <com.quadpixels.midisheetmusicmemo1.TommyKeyboardView
-        android:id="@+id/keyboard2"
-        android:layout_width="match_parent"
-        android:layout_height="130dp"
-        />
-    
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+            <ImageView
+                android:id="@+id/imageView1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/textView1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="" />
+
+            <com.quadpixels.midisheetmusicmemo1.TommyKeyboardView
+                android:id="@+id/keyboard1"
+                android:layout_width="match_parent"
+                android:layout_height="130dp" />
+
+            <com.quadpixels.midisheetmusicmemo1.TommyKeyboardView
+                android:id="@+id/keyboard2"
+                android:layout_width="match_parent"
+                android:layout_height="130dp" />
+        </LinearLayout>
+    </ScrollView>
+
 </LinearLayout>
